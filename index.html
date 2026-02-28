@@ -1,18 +1,30 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jogatina Soundboard</title>
-<link rel="stylesheet" href="style.css?v=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jogatina Soundboard</title>
+  <link rel="stylesheet" href="style.css?v=1" />
 </head>
 <body>
+  <header class="top">
+    <h1>Jogatina Soundboard</h1>
+    <div class="hint">1) Toque/click uma vez na página para liberar áudio. 2) Depois clique nos botões.</div>
+  </header>
 
-<h1>Jogatina Soundboard</h1>
-<p>Clique em qualquer lugar primeiro para liberar som.</p>
+  <main>
+    <div class="bar">
+      <button id="reload" class="btn">Recarregar lista</button>
+      <span id="status" class="status">Carregando…</span>
+    </div>
 
-<div id="themes"></div>
+    <div id="themes" class="themes"></div>
 
-<script src="app.js?v=1"></script>
+    <div class="footer">
+      <div><b>Dica:</b> para atualizar automaticamente os temas, rode <code>generate_playlist.bat</code> no Windows e faça commit + push.</div>
+    </div>
+  </main>
+
+  <script src="app.js?v=1"></script>
 </body>
 </html>
