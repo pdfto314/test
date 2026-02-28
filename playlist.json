@@ -1,3 +1,339 @@
 {
-  "categories": []
+    "categories":  [
+                       {
+                           "name":  "Chuva",
+                           "items":  [
+                                         {
+                                             "title":  "amb forest thunder rain night ka 728687",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/amb_forest_thunder_rain_night_ka_728687.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "heavy rain and hail on window during light thunderstorm 689960",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/heavy_rain_and_hail_on_window_during_light_thunderstorm_689960.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "rain ambiencewav 652407",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/rain_ambiencewav_652407.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "rain and thunder ambience tübingen 369547",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/rain_and_thunder_ambience_t%C3%BCbingen_369547.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "rainy night with thunder and water droppingwav 399682",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/rainy_night_with_thunder_and_water_droppingwav_399682.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "storm surround 220701 0132wav 640370",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/storm_surround_220701_0132wav_640370.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "summer thunder 810051",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/summer_thunder_810051.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "thunder coutryside spring birds 736855",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/thunder_coutryside_spring_birds_736855.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "thunder rain courtyard 810880",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/thunder_rain_courtyard_810880.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "thunder rain longwav 519484",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/thunder_rain_longwav_519484.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "thunderstorm 19th of may 2014 267277",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/thunderstorm_19th_of_may_2014_267277.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "thunderstorm sound fx 699907",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/thunderstorm_sound_fx_699907.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Dungeon",
+                           "items":  [
+                                         {
+                                             "title":  "Caverna com gotas ",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/Caverna%20com%20gotas%20.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Floresta",
+                           "items":  [
+                                         {
+                                             "title":  "forest birds wind dark haunted outdoor eerie atmo atmosphere cinematicwav 617747",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/forest_birds_wind_dark_haunted_outdoor_eerie_atmo_atmosphere_cinematicwav_617747.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "forest night ambience stereo 48khz 24bit 220 owi 708611",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/forest_night_ambience_stereo_48khz_24bit_220_owi_708611.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Passaro espesifico",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/Passaro%20espesifico.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "pinewood in memoriam febr 05 nl giersbergen 33db 170215 1085flac 383506",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/pinewood_in_memoriam_febr_05_nl_giersbergen_33db_170215_1085flac_383506.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "small wood at night close to rio de janeiro on the way to pedra bonita 410357",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/small_wood_at_night_close_to_rio_de_janeiro_on_the_way_to_pedra_bonita_410357.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Mar",
+                           "items":  [
+                                         {
+                                             "title":  "Dentro Navio ou Vilarejo perto de port",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/Dentro%20Navio%20ou%20Vilarejo%20perto%20de%20port.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Tensão",
+                           "items":  [
+                                         {
+                                             "title":  "23 somethings not right dark cinematic drone 614485",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/23_somethings_not_right_dark_cinematic_drone_614485.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "airy pitched background 742885",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/airy_pitched_background_742885.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "doomed drone 786902",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/doomed_drone_786902.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "drone 15122015 332246",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/drone_15122015_332246.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient bass synth drone with huge reverb 002 anton bushins 776685",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_002_anton_bushins_776685.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient bass synth drone with huge reverb and hf resonance 777039",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_and_hf_resonance_777039.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient bass synth drone with huge reverb and hi frequency 776835",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_and_hi_frequency_776835.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient extremely bass drone with huge reverb and hi metall 777077",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_extremely_bass_drone_with_huge_reverb_and_hi_metall_777077.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient heavy bass drone 006 anton bushinskiy ab fx 777335",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_heavy_bass_drone_006_anton_bushinskiy_ab_fx_777335.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient heavy bass noisy drone 007 779184",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_heavy_bass_noisy_drone_007_779184.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "dsgndron dark sci fi ambient synth drone with huge reverb 001 anton bushinskiy a 776586",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/dsgndron_dark_sci_fi_ambient_synth_drone_with_huge_reverb_001_anton_bushinskiy_a_776586.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "journey to the interweb 609250",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/journey_to_the_interweb_609250.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         }
+                                     ]
+                       }
+                   ]
 }
