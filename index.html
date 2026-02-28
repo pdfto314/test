@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Jogatina Soundboard</title>
+  <link rel="stylesheet" href="style.css?v=7" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">🎧</div>
+    <div class="brand-text">
+      <div class="title">Jogatina Soundboard</div>
+      <div class="subtitle">Temas automáticos por pasta em <code>audio/</code></div>
+    </div>
+  </div>
+
+  <div class="status-pill" id="audioStatus">
+    <span class="dot" id="audioDot"></span>
+    <span id="audioText">Clique em um áudio para liberar som</span>
+  </div>
+
+  <div class="search-wrap">
+    <input id="globalSearch" type="search" placeholder="Buscar tema ou áudio… (ex: chuva, vila, dungeon)" />
+  </div>
+
+  <div class="controls">
+    <button class="btn ghost" id="stopAmbient">Parar Ambiente</button>
+    <button class="btn ghost" id="stopEffects">Parar Efeitos</button>
+
+    <label class="slider">
+      <span>Amb</span>
+      <input id="volAmbient" type="range" min="0" max="1" step="0.01" value="0.85" />
+    </label>
+
+    <label class="slider">
+      <span>Efx</span>
+      <input id="volEffects" type="range" min="0" max="1" step="0.01" value="0.90" />
+    </label>
+  </div>
+</header>
+
+<main class="main">
+  <div class="hint" id="status">Carregando temas do GitHub…</div>
+
+  <!-- Grid de Temas -->
+  <section class="grid" id="themeGrid"></section>
+
+  <!-- Resultados da busca global (mostra cards de áudio) -->
+  <section class="global-results hidden" id="globalResults">
+    <div class="global-results-head">
+      <div class="global-results-title">Resultados</div>
+      <button class="btn ghost" id="closeResults">Fechar</button>
+    </div>
+    <div class="global-results-list" id="globalResultsList"></div>
+  </section>
+</main>
+
+<!-- Modal do Tema -->
+<div class="modal hidden" id="modal" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-head">
+      <button class="btn ghost" id="modalBack">← Voltar</button>
+
+      <div class="modal-title-wrap">
+        <div class="modal-title">
+          <span class="modal-emoji" id="modalEmoji">🎧</span>
+          <span id="modalTitle">Tema</span>
+        </div>
+        <div class="modal-sub" id="modalSub">0 áudios</div>
+      </div>
+
+      <div class="modal-actions">
+        <input id="themeSearch" type="search" placeholder="Buscar dentro do tema…" />
+      </div>
+    </div>
+
+    <div class="modal-body" id="trackList"></div>
+  </div>
+</div>
+
+<script src="app.js?v=7"></script>
+</body>
+</html>
