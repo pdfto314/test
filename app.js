@@ -60,27 +60,34 @@ function cleanName(filename){
     .trim();
 }
 
-function themeEmoji(name){
-  const key = String(name).toLowerCase();
+function themeEmoji(folder){
+  const n = folder.toLowerCase();
 
-  if (key.includes("chuva")) return "🌧️";
-  if (key.includes("dungeon")) return "🏰";
-  if (key.includes("floresta")) return "🌲";
-  if (key.includes("mar")) return "🌊";
-  if (key.includes("tens")) return "🩸";
+  // chuva / tempestade
+  if (n.includes("chuva") || n.includes("rain")) return "🌧️";
+  if (n.includes("trov") || n.includes("thunder") || n.includes("tempest")) return "⛈️";
 
-  if (key.includes("goblin")) return "👺";
-  if (key.includes("warg") || key.includes("lobo")) return "🐺";
-  if (key.includes("morto") || key.includes("undead")) return "💀";
-  if (key.includes("cult")) return "🕯️";
-  if (key.includes("aranha") || key.includes("spider")) return "🕷️";
-  if (key.includes("dragao") || key.includes("dragon")) return "🐉";
+  // lugares
+  if (n.includes("vila") || n.includes("cidade") || n.includes("town")) return "🏘️";
+  if (n.includes("taverna") || n.includes("tavern") || n.includes("inn")) return "🍺";
+  if (n.includes("floresta") || n.includes("forest") || n.includes("woods")) return "🌲";
+  if (n.includes("caverna") || n.includes("cave") || n.includes("dungeon")) return "🕳️";
+  if (n.includes("castelo") || n.includes("castle") || n.includes("fort")) return "🏰";
+  if (n.includes("templo") || n.includes("temple") || n.includes("ruin")) return "🏛️";
+  if (n.includes("montanha") || n.includes("mount")) return "⛰️";
+  if (n.includes("mar") || n.includes("oceano") || n.includes("sea")) return "🌊";
+  if (n.includes("deserto") || n.includes("desert")) return "🏜️";
 
-  if (key.includes("batalha")) return "⚔️";
-  if (key.includes("emboscada")) return "🎯";
-  if (key.includes("ritual")) return "🔮";
+  // clima / vibes
+  if (n.includes("noite") || n.includes("night")) return "🌙";
+  if (n.includes("neve") || n.includes("snow") || n.includes("gelo")) return "❄️";
+  if (n.includes("vento") || n.includes("wind")) return "🌬️";
+  if (n.includes("fogo") || n.includes("fire")) return "🔥";
+  if (n.includes("tens") || n.includes("susp") || n.includes("horror")) return "🕯️";
+  if (n.includes("batalha") || n.includes("battle") || n.includes("boss")) return "⚔️";
+  if (n.includes("magia") || n.includes("arcano") || n.includes("magic")) return "✨";
 
-  return "🎵";
+  return "🎧";
 }
 
 // cor “surpresa” (determinística por texto)
@@ -311,8 +318,8 @@ function openTheme(folder){
   modal.classList.remove("hidden");
   if (themeSearch){
     themeSearch.value = "";
-    // sem auto-focus (iPad)
-}
+    themeSearch.focus();
+  }
 
   renderTrackList(folder, "");
 }
@@ -509,30 +516,52 @@ async function init(){
     renderThemeGrid("");
 
     // atualiza em segundo plano
-    refreshFromGithub().catch(()=>{});
+    refreshFromPlaylist().catch(()=>{});
     return;
   }
 
   // senão, carrega normal
-  await refreshFromGithub();
+  await refreshFromPlaylist();
 }
 
-async function refreshFromGithub(){
-  setStatus("Carregando temas do GitHub…");
+async function refreshFromPlaylist(){
+  setStatus("Carregando playlist.json…");
 
-  const files = await scanMp3Recursive(AUDIO_ROOT);
-  THEMES = groupByTheme(files);
+  // cache-buster pra evitar cache do Pages
+  const res = await fetch(`playlist.json?v=${Date.now()}`);
+  if (!res.ok){
+    throw new Error("Nao consegui carregar playlist.json (status " + res.status + ")");
+  }
+  const data = await res.json();
+
+  const themes = {};
+  const cats = Array.isArray(data?.categories) ? data.categories : [];
+  for (const c of cats){
+    const name = c?.name || "Outros";
+    const items = Array.isArray(c?.items) ? c.items : [];
+    themes[name] = items.map(it=>{
+      const url = it.url || "";
+      // nome de exibição: se tiver title usa, senão usa o nome do arquivo
+      let fname = it.title;
+      if (!fname){
+        try{
+          const parts = url.split("/");
+          fname = parts[parts.length-1] || url;
+        }catch(_){ fname = url; }
+      }
+      // mantém compatibilidade com UI antiga (f.name e f.url)
+      return { name: fname, url: url, path: url };
+    });
+    // ordenar
+    themes[name].sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  }
+
+  THEMES = themes;
   THEME_KEYS = Object.keys(THEMES).sort((a,b)=>a.localeCompare(b));
 
   saveCache({ THEMES, THEME_KEYS });
 
-  if (!THEME_KEYS.length){
-    setStatus("Não achei MP3 em /audio. Suba em audio/AlgumaPasta/arquivo.mp3");
-    renderThemeGrid("");
-    return;
-  }
-
-  setStatus(`Pronto ✅ Temas: ${THEME_KEYS.length} • Áudios: ${files.length}`);
+  setStatus(`Pronto ✅ ${THEME_KEYS.length} tema(s) • clique para abrir`);
   renderThemeGrid("");
 }
 
@@ -543,16 +572,3 @@ window.addEventListener("DOMContentLoaded", ()=>{
     setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
   });
 });
-
-
-(function(){
-  const styleId = "sb-noselect-style";
-  if (document.getElementById(styleId)) return;
-  const st = document.createElement("style");
-  st.id = styleId;
-  st.textContent = `
-    .theme-card, .theme-card * { user-select: none; -webkit-user-select: none; }
-    .theme-card { cursor: pointer; }
-  `;
-  document.head.appendChild(st);
-})();

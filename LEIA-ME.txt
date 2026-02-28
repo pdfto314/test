@@ -1,21 +1,21 @@
-HEROES OF THE BORDERLANDS — Auto-download (Freesound) + pastas prontas
-
-O que isso faz:
-- Baixa automaticamente (via Freesound API) MP3 de PREVIEW (preview-hq-mp3)
-- Salva em: ./audio/<tema>/
-- Pastas/temas: chuva, dungeon, floresta, mar, tensão, goblin, warg, morto_vivo, cultista, aranha, dragao, batalha, emboscada, ritual
-- Gera credits.json com autores/licenças
-
 Como usar (Windows):
-1) Extraia este ZIP dentro do seu projeto (mesma pasta do index.html e generate_playlist.bat)
-2) Crie sua chave no Freesound (API Key) e rode no CMD:
-   setx FREESOUND_API_KEY "SUA_CHAVE_AQUI"
 
-3) Rode:
-   TUDO_EM_UM.bat  (baixa e depois tenta rodar generate_playlist.bat)
-   ou
-   RUN_HEROES_DOWNLOAD.bat (só baixa)
+1) Extraia estes arquivos dentro da pasta do seu projeto (test/), onde está o index.html.
+   Deve ficar assim:
+   test/
+     index.html
+     app.js
+     style.css
+     audio/
+       temas/ (se você usa esse formato)
+     gerar_playlist.py
+     generate_playlist.bat
 
-Config:
-- heroes_queries.json controla pastas, queries e limites.
-- Para mais sons por pasta: aumente "max_per_category".
+2) Rode o BAT:
+   generate_playlist.bat
+
+Se der erro de 'py não encontrado':
+- Instale Python 3 do site oficial OU Microsoft Store
+- E marque 'Add to PATH' (ou use o launcher 'py' do Windows)
+
+Depois: Commit + Push no GitHub Desktop.
