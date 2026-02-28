@@ -4,8 +4,8 @@
 // OWNER/REPO já configurados
 // =====================================================
 
-const OWNER = "zimbpdf0";
-const REPO  = "Pdf001";
+const OWNER = "pdfto314";
+const REPO  = "test";
 const BRANCH = "main";
 const AUDIO_ROOT = "audio";
 
@@ -550,3 +550,4 @@ window.addEventListener("DOMContentLoaded", ()=>{
     setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
   });
 });
+
