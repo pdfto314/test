@@ -1,550 +1,545 @@
-// Jogatina Soundboard — FULL UI + Volume por faixa (sem GitHub API, usa playlist.json)
-const PLAYLIST_URL = "playlist.json";
-const CACHE_TTL_MS = 10 * 60 * 1000;
+// =====================================================
+// Jogatina Soundboard — Auto temas por pasta (GitHub API)
+// Repo: https://zimbpdf0.github.io/Pdf001/
+// OWNER/REPO já configurados
+// =====================================================
 
-let CACHE = { ts: 0, themes: null };
-let THEMES = {};              // { themeName: [items...] }
-let currentTheme = null;
+const OWNER = "zimbpdf0";
+const REPO  = "Pdf001";
+const BRANCH = "main";
+const AUDIO_ROOT = "audio";
 
-// Mix (volumes individuais)
-const MIX_KEY = "jogatina_mix_v1"; // { [url]: 0..1 }
-let MIX = {};
+// Cache (pra não bater na API toda hora)
+const CACHE_KEY = "jsb_cache_v1";
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
 
-function loadMix(){
-  try{ MIX = JSON.parse(localStorage.getItem(MIX_KEY) || "{}") || {}; }
-  catch(_){ MIX = {}; }
-}
-function saveMix(){
-  try{ localStorage.setItem(MIX_KEY, JSON.stringify(MIX)); }catch(_){}
-}
-function getTrackMix(url){
-  const v = MIX[url];
-  return (typeof v === "number" && isFinite(v)) ? Math.max(0, Math.min(1, v)) : 0.8;
-}
-function setTrackMix(url, v){
-  MIX[url] = Math.max(0, Math.min(1, v));
-  saveMix();
-}
+// 2 canais: ambiente (loop) + efeitos (one-shot e pode sobrepor)
+let ambientAudio = null;
+let ambientNowBtn = null;
 
-// DOM
-const themeGrid   = document.getElementById("themeGrid");
-const modal       = document.getElementById("modal");
-const themeTitle  = document.getElementById("themeTitle");
-const trackList   = document.getElementById("trackList");
-const themeSearch = document.getElementById("themeSearch");
-const themeFilter = document.getElementById("themeFilter");
+let effectAudios = [];
+const MAX_EFFECTS = 6;
 
-// ---------------- iOS helpers ----------------
-function isIOS(){
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-}
-function blurActive(){ document.activeElement?.blur?.(); }
+// iOS/Safari/Edge costumam exigir “unlock” por gesto do usuário
+let audioUnlocked = false;
+let audioCtx = null;
 
-// ---------------- Status pill ----------------
+function $(id){ return document.getElementById(id); }
+
 function setPill(ok, text){
-  const dot = document.getElementById("audioDot");
-  const label = document.getElementById("audioText");
+  const dot = $("audioDot");
+  const label = $("audioText");
   if (!dot || !label) return;
 
-  if (ok === true) dot.className = "dot ok";
-  else if (ok === false) dot.className = "dot bad";
-  else dot.className = "dot";
-
-  label.textContent = text || "";
-}
-
-// ---------------- Audio unlock ----------------
-let AUDIO_UNLOCKED = false;
-function unlockAudio(){
-  if (AUDIO_UNLOCKED) return;
-
-  try{
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC){
-      const ctx = new AC();
-      ctx.resume?.();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      gain.gain.value = 0.00001;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.02);
-    }
-  }catch(_){}
-
-  try{
-    const a = new Audio();
-    a.muted = true;
-    a.play?.().catch(()=>{});
-  }catch(_){}
-
-  AUDIO_UNLOCKED = true;
-}
-document.addEventListener("pointerdown", unlockAudio, { passive:true });
-document.addEventListener("touchstart", unlockAudio, { passive:true });
-
-// ---------------- Volumes globais ----------------
-function getVolAmbient(){
-  const el = document.getElementById("volAmbient");
-  const v = el ? Number(el.value) : 0.6;
-  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.6;
-}
-function getVolEffects(){
-  const el = document.getElementById("volEffects");
-  const v = el ? Number(el.value) : 0.85;
-  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.85;
-}
-function finalAmbientVolume(url){ return getVolAmbient() * getTrackMix(url); }
-function finalEffectVolume(url){ return getVolEffects() * getTrackMix(url); }
-
-// ---------------- Multi-ambient layers ----------------
-let ambientLayers = []; // [{urlAbs, urlKey, audio, btn, title}]
-
-function findLayer(urlAbs){ return ambientLayers.find(l=>l.urlAbs===urlAbs) || null; }
-
-function stopLayer(layer){
-  try{ layer.audio.pause(); layer.audio.currentTime = 0; }catch(_){}
-  layer.btn?.classList.remove("now");
-  ambientLayers = ambientLayers.filter(l => l !== layer);
-}
-
-function syncAmbientVolumes(){
-  ambientLayers.forEach(l=>{
-    try{ l.audio.volume = finalAmbientVolume(l.urlKey); }catch(_){}
-  });
-}
-
-function stopAmbient(){
-  ambientLayers.forEach(l=>{
-    try{ l.audio.pause(); l.audio.currentTime = 0; }catch(_){}
-    l.btn?.classList.remove("now");
-  });
-  ambientLayers = [];
-  setPill(null, "Ambientes parados.");
-}
-
-function stopEffects(){
-  setPill(null, "Efeitos ok.");
-}
-
-function playAmbient(urlKey, urlAbs, btn, title=""){
-  unlockAudio();
-
-  const existing = findLayer(urlAbs);
-  if (existing){
-    stopLayer(existing);
-    setPill(true, ambientLayers.length ? `Ambientes: ${ambientLayers.length} ✅` : "Ambiente parado ✅");
-    return;
+  if (ok === true){
+    dot.style.background = "var(--good)";
+    dot.style.boxShadow = "0 0 0 4px rgba(62,224,127,.12)";
+  } else if (ok === false){
+    dot.style.background = "var(--bad)";
+    dot.style.boxShadow = "0 0 0 4px rgba(255,90,106,.12)";
+  } else {
+    dot.style.background = "var(--warn)";
+    dot.style.boxShadow = "0 0 0 4px rgba(255,209,102,.12)";
   }
-
-  const a = new Audio(urlAbs);
-  a.loop = true;
-  a.volume = finalAmbientVolume(urlKey);
-
-  const layer = { urlAbs, urlKey, audio: a, btn, title };
-  ambientLayers.push(layer);
-
-  btn?.classList.add("now");
-
-  a.play().then(()=>{
-    setPill(true, `Ambientes: ${ambientLayers.length} ✅`);
-  }).catch(()=>{
-    stopLayer(layer);
-    setPill(false, "Bloqueado pelo navegador. Toque novamente.");
-  });
+  label.textContent = text;
 }
 
-function playEffect(urlKey, urlAbs){
-  unlockAudio();
-  const a = new Audio(urlAbs);
-  a.volume = finalEffectVolume(urlKey);
-  a.play().catch(()=>{
-    setPill(false, "Bloqueado pelo navegador. Toque novamente.");
-  });
+function setStatus(text){
+  const s = $("status");
+  if (s) s.textContent = text;
 }
 
-// ---------------- Scenes (Sets) ----------------
-const SCENE_KEY = "jogatina_scenes_v3";
-let SCENES = {};
+function getVolAmbient(){ return Number($("volAmbient")?.value ?? 0.85); }
+function getVolEffects(){ return Number($("volEffects")?.value ?? 0.90); }
 
-function loadScenes(){
-  try{ SCENES = JSON.parse(localStorage.getItem(SCENE_KEY) || "{}") || {}; }
-  catch(_){ SCENES = {}; }
-  renderSceneSelect();
-}
-function saveScenes(){
-  try{ localStorage.setItem(SCENE_KEY, JSON.stringify(SCENES)); }catch(_){}
-}
-function renderSceneSelect(){
-  const sel = document.getElementById("sceneSelect");
-  if (!sel) return;
-  const current = sel.value;
-
-  sel.innerHTML = '<option value="">(Sem set salvo)</option>';
-  Object.keys(SCENES).sort((a,b)=>a.localeCompare(b,"pt-BR")).forEach(name=>{
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    sel.appendChild(opt);
-  });
-
-  if (current && SCENES[current]) sel.value = current;
-}
-
-function snapshotCurrentScene(){
-  return {
-    ambients: ambientLayers.map(l => ({ urlKey: l.urlKey, urlAbs: l.urlAbs, title: l.title || "" })),
-    volAmbient: getVolAmbient(),
-    volEffects: getVolEffects()
-  };
-}
-
-function applySceneByName(name){
-  const sc = SCENES[name];
-  if (!sc) return;
-
-  const vA = document.getElementById("volAmbient");
-  const vE = document.getElementById("volEffects");
-  if (vA && typeof sc.volAmbient === "number") vA.value = String(sc.volAmbient);
-  if (vE && typeof sc.volEffects === "number") vE.value = String(sc.volEffects);
-
-  stopAmbient();
-
-  (sc.ambients || []).forEach(item=>{
-    const a = new Audio(item.urlAbs);
-    a.loop = true;
-    a.volume = finalAmbientVolume(item.urlKey);
-    const layer = { urlAbs: item.urlAbs, urlKey: item.urlKey, audio: a, btn: null, title: item.title || "" };
-    ambientLayers.push(layer);
-    a.play().catch(()=>{ stopLayer(layer); });
-  });
-
-  setPill(true, `Set aplicado: ${name} ✅`);
-}
-
-// Modal salvar set
-function openSceneNameModal(){
-  const snap = snapshotCurrentScene();
-  if (!snap.ambients.length){
-    alert("Nenhum ambiente tocando para salvar. Toque em alguns '🌫️ Ambiente' primeiro.");
-    return;
-  }
-
-  const m = document.getElementById("sceneNameModal");
-  const input = document.getElementById("sceneNameInput");
-  const hint = document.getElementById("sceneNameHint");
-  if (!m || !input) return;
-
-  hint.textContent = `Ambientes no set: ${snap.ambients.length}`;
-  m.classList.remove("hidden");
-  m.setAttribute("aria-hidden", "false");
-
-  if (!isIOS()){
-    input.focus();
-    input.select?.();
-  }else{
-    input.blur();
-  }
-
-  m._snap = snap;
-}
-function closeSceneNameModal(){
-  const m = document.getElementById("sceneNameModal");
-  if (!m) return;
-  m.classList.add("hidden");
-  m.setAttribute("aria-hidden", "true");
-  m._snap = null;
-  document.getElementById("sceneNameInput")?.blur?.();
-}
-function confirmSaveSceneFromModal(){
-  const m = document.getElementById("sceneNameModal");
-  const input = document.getElementById("sceneNameInput");
-  const hint = document.getElementById("sceneNameHint");
-  if (!m || !input) return;
-
-  const name = (input.value || "").trim();
-  const snap = m._snap;
-
-  if (!name){
-    hint.textContent = "Digite um nome para salvar.";
-    return;
-  }
-  if (!snap?.ambients?.length){
-    hint.textContent = "Não achei ambientes tocando. Tente novamente.";
-    return;
-  }
-
-  SCENES[name] = snap;
-  saveScenes();
-  renderSceneSelect();
-
-  const sel = document.getElementById("sceneSelect");
-  if (sel) sel.value = name;
-
-  setPill(true, `Set salvo: ${name} ✅`);
-  closeSceneNameModal();
-}
-
-function deleteSelectedScene(){
-  const sel = document.getElementById("sceneSelect");
-  const name = sel?.value;
-  if (!name) return;
-  if (!confirm(`Excluir o set "${name}"?`)) return;
-  delete SCENES[name];
-  saveScenes();
-  renderSceneSelect();
-  setPill(true, "Set excluído ✅");
-}
-
-// ---------------- Playlist loader (no GitHub API) ----------------
-function normalizeThemeData(data){
-  const out = {};
-  for (const cat of (data.categories || [])){
-    const name = cat.name || "Sem nome";
-    out[name] = (cat.items || []).map(it => ({
-      title: it.title || it.name || "Sem título",
-      url: it.url,
-      type: (it.type || "ambience").toLowerCase(), // ambience/effect
-      tags: it.tags || [],
-      loop: !!it.loop,
-      volume: (typeof it.volume === "number") ? it.volume : null,
-      emoji: it.emoji || null
-    }));
-  }
-  return out;
-}
-
-async function loadThemes(){
-  const now = Date.now();
-  if (CACHE.themes && (now - CACHE.ts < CACHE_TTL_MS)){
-    THEMES = CACHE.themes;
-    renderThemes();
-    return;
-  }
-
-  try{
-    setPill(null, "Carregando playlist.json…");
-    const r = await fetch(`${PLAYLIST_URL}?t=${Date.now()}`, { cache:"no-store" });
-    if (!r.ok) throw new Error(`Falha ao carregar playlist.json (HTTP ${r.status})`);
-    const data = await r.json();
-
-    THEMES = normalizeThemeData(data);
-    CACHE = { ts: now, themes: THEMES };
-    renderThemes();
-    setPill(true, "Playlist carregada ✅");
-  }catch(err){
-    console.error(err);
-    setPill(false, "Erro ao carregar playlist.json.");
-    alert("Erro ao carregar playlist.json.\n\nDetalhe: " + err.message);
-  }
+function cleanName(filename){
+  return filename
+    .replace(/\.mp3$/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function themeEmoji(name){
   const key = String(name).toLowerCase();
+
   if (key.includes("chuva")) return "🌧️";
   if (key.includes("dungeon")) return "🏰";
   if (key.includes("floresta")) return "🌲";
   if (key.includes("mar")) return "🌊";
-  if (key.includes("tens")) return "⚡";
+  if (key.includes("tens")) return "🩸";
+
+  if (key.includes("goblin")) return "👺";
+  if (key.includes("warg") || key.includes("lobo")) return "🐺";
+  if (key.includes("morto") || key.includes("undead")) return "💀";
+  if (key.includes("cult")) return "🕯️";
+  if (key.includes("aranha") || key.includes("spider")) return "🕷️";
+  if (key.includes("dragao") || key.includes("dragon")) return "🐉";
+
+  if (key.includes("batalha")) return "⚔️";
+  if (key.includes("emboscada")) return "🎯";
+  if (key.includes("ritual")) return "🔮";
+
   return "🎵";
 }
 
-function renderThemes(){
-  const q = (themeFilter?.value || "").trim().toLowerCase();
-  themeGrid.innerHTML = "";
+// cor “surpresa” (determinística por texto)
+function hashHue(str){
+  let h = 0;
+  for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
 
-  const names = Object.keys(THEMES)
-    .filter(n => n.toLowerCase().includes(q))
-    .sort((a,b)=>a.localeCompare(b,"pt-BR"));
+function unlockAudioOnce(){
+  if (audioUnlocked) return;
+  audioUnlocked = true;
 
-  if (!names.length){
-    const div = document.createElement("div");
-    div.className = "small";
-    div.textContent = "Nenhum tema encontrado (filtro ou playlist vazia).";
-    themeGrid.appendChild(div);
-    return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC){
+      audioCtx = new AC();
+      // cria um som mudo curtinho pra “destravar”
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      g.gain.value = 0.00001;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(); o.stop(audioCtx.currentTime + 0.02);
+      audioCtx.resume?.();
+    }
+  }catch(_){}
+
+  setPill(true, "Áudio liberado ✅");
+}
+
+function stopAmbient(){
+  if (ambientAudio){
+    ambientAudio.pause();
+    ambientAudio.currentTime = 0;
+    ambientAudio = null;
   }
+  if (ambientNowBtn){
+    ambientNowBtn.classList.remove("now");
+    ambientNowBtn = null;
+  }
+}
 
-  names.forEach(name=>{
-    const items = THEMES[name] || [];
-    const card = document.createElement("div");
-    card.className = "theme-card";
-    card.innerHTML = `
-      <div class="theme-emoji">${themeEmoji(name)}</div>
-      <div>
-        <div class="theme-name">${name}</div>
-        <div class="theme-count">${items.length} áudio(s)</div>
-      </div>
-    `;
-    card.addEventListener("click", ()=>openTheme(name));
-    themeGrid.appendChild(card);
+function stopEffects(){
+  for (const a of effectAudios){
+    try{ a.pause(); a.currentTime = 0; }catch(_){}
+  }
+  effectAudios = [];
+}
+
+function playAmbient(url, btn){
+  unlockAudioOnce();
+  stopAmbient();
+
+  ambientAudio = new Audio(url);
+  ambientAudio.loop = true;
+  ambientAudio.volume = getVolAmbient();
+
+  ambientNowBtn = btn;
+  ambientNowBtn?.classList.add("now");
+
+  ambientAudio.play().then(()=>{
+    setPill(true, "Tocando ambiente (loop) ✅");
+  }).catch(()=>{
+    setPill(false, "Bloqueado pelo navegador. Clique de novo ou use Safari/Chrome.");
   });
 }
 
-// ---------------- Theme modal ----------------
-function openTheme(name){
-  currentTheme = name;
-  themeTitle.textContent = name;
+function playEffect(url){
+  unlockAudioOnce();
 
-  modal.classList.remove("hidden");
-  modal.setAttribute("aria-hidden","false");
+  // limita sobreposição
+  if (effectAudios.length >= MAX_EFFECTS){
+    const old = effectAudios.shift();
+    try{ old.pause(); old.currentTime = 0; }catch(_){}
+  }
 
-  themeSearch.value = "";
-  if (!isIOS()) themeSearch.focus();
-  else themeSearch.blur();
+  const a = new Audio(url);
+  a.loop = false;
+  a.volume = getVolEffects();
+  effectAudios.push(a);
 
-  renderTrackList("");
+  a.play().then(()=>{
+    setPill(true, "Efeito tocando ✅");
+  }).catch(()=>{
+    setPill(false, "Bloqueado pelo navegador. Clique de novo ou use Safari/Chrome.");
+  });
+
+  a.addEventListener("ended", ()=>{
+    effectAudios = effectAudios.filter(x => x !== a);
+  });
 }
 
-function closeModal(){
-  modal.classList.add("hidden");
-  modal.setAttribute("aria-hidden","true");
-  blurActive();
+// ---------- GitHub API ----------
+async function listGithubDir(path){
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${BRANCH}`;
+  const r = await fetch(api, { cache: "no-store" });
+  if (!r.ok) throw new Error(`GitHub API erro ${r.status} em ${path}`);
+  return r.json();
 }
 
-function renderTrackList(filter){
-  trackList.innerHTML = "";
-  const q = (filter || "").toLowerCase().trim();
+async function scanMp3Recursive(path){
+  const items = await listGithubDir(path);
+  let files = [];
 
-  const all = (THEMES[currentTheme] || []);
-  const items = all.filter(it =>
-    it.title.toLowerCase().includes(q) ||
-    (it.tags || []).some(t => String(t).toLowerCase().includes(q))
-  );
+  for (const it of items){
+    if (it.type === "dir"){
+      const deeper = await scanMp3Recursive(it.path);
+      files = files.concat(deeper);
+    } else if (it.type === "file" && it.name.toLowerCase().endsWith(".mp3")){
+      files.push({
+        name: it.name,
+        path: it.path,
+        url: it.download_url
+      });
+    }
+  }
+  return files;
+}
 
-  if (!items.length){
-    const div = document.createElement("div");
-    div.className = "small";
-    div.textContent = "Nenhum áudio encontrado.";
-    trackList.appendChild(div);
+function groupByTheme(files){
+  const groups = {};
+  for (const f of files){
+    const rel = f.path.startsWith(AUDIO_ROOT + "/")
+      ? f.path.slice((AUDIO_ROOT + "/").length)
+      : f.path;
+
+    const folder = rel.includes("/") ? rel.split("/")[0] : "Outros";
+    (groups[folder] ||= []).push(f);
+  }
+  // ordenar
+  for (const k of Object.keys(groups)){
+    groups[k].sort((a,b)=>a.name.localeCompare(b.name));
+  }
+  return groups;
+}
+
+function saveCache(data){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      at: Date.now(),
+      data
+    }));
+  }catch(_){}
+}
+
+function loadCache(){
+  try{
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj?.at || !obj?.data) return null;
+    if (Date.now() - obj.at > CACHE_TTL_MS) return null;
+    return obj.data;
+  }catch(_){
+    return null;
+  }
+}
+
+// ---------- UI ----------
+let THEMES = {};   // { folder: [files...] }
+let THEME_KEYS = []; // sorted
+let currentTheme = null;
+
+function renderThemeGrid(filterText=""){
+  const grid = $("themeGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+
+  const q = filterText.trim().toLowerCase();
+
+  const keys = THEME_KEYS.filter(folder => {
+    if (!q) return true;
+    if (folder.toLowerCase().includes(q)) return true;
+    // também procura dentro das faixas
+    return THEMES[folder].some(f => f.name.toLowerCase().includes(q));
+  });
+
+  if (!keys.length){
+    setStatus("Nada encontrado. Tente outro termo.");
     return;
   }
 
-  items.forEach(it=>{
+  setStatus(`Temas: ${keys.length} • Áudios: ${THEME_KEYS.reduce((n,k)=>n+THEMES[k].length,0)}`);
+
+  for (const folder of keys){
+    const hue = hashHue(folder);
+    const emoji = themeEmoji(folder);
+
+    const card = document.createElement("div");
+    card.className = "theme-card";
+
+    const icon = document.createElement("div");
+    icon.className = "theme-emoji";
+    icon.textContent = emoji;
+    icon.style.borderColor = `hsla(${hue}, 90%, 70%, .25)`;
+    icon.style.boxShadow = `0 0 0 4px hsla(${hue}, 90%, 70%, .08)`;
+
+    const info = document.createElement("div");
+    info.className = "theme-info";
+    info.innerHTML = `
+      <div class="name">${folder}</div>
+      <div class="meta">${THEMES[folder].length} áudio(s) • clique para abrir</div>
+    `;
+
+    card.appendChild(icon);
+    card.appendChild(info);
+
+    card.onclick = () => openTheme(folder);
+
+    grid.appendChild(card);
+  }
+}
+
+function openTheme(folder){
+  currentTheme = folder;
+  const modal = $("modal");
+  const title = $("modalTitle");
+  const sub = $("modalSub");
+  const emojiEl = $("modalEmoji");
+  const themeSearch = $("themeSearch");
+
+  if (!modal || !title || !sub || !emojiEl) return;
+
+  title.textContent = folder;
+  emojiEl.textContent = themeEmoji(folder);
+  sub.textContent = `${THEMES[folder].length} áudio(s)`;
+
+  modal.classList.remove("hidden");
+  if (themeSearch){
+    themeSearch.value = "";
+    themeSearch.focus();
+  }
+
+  renderTrackList(folder, "");
+}
+
+function closeTheme(){
+  const modal = $("modal");
+  if (modal) modal.classList.add("hidden");
+  currentTheme = null;
+}
+
+function renderTrackList(folder, filterText){
+  const list = $("trackList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  const q = filterText.trim().toLowerCase();
+  const items = THEMES[folder].filter(f => {
+    if (!q) return true;
+    return f.name.toLowerCase().includes(q) || cleanName(f.name).toLowerCase().includes(q);
+  });
+
+  if (!items.length){
+    const empty = document.createElement("div");
+    empty.className = "hint";
+    empty.textContent = "Nenhum áudio encontrado nesse tema.";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const f of items){
     const row = document.createElement("div");
     row.className = "track";
 
     const left = document.createElement("div");
-    left.innerHTML = `<div class="track-title">${it.title}</div>
-                      <div class="tagline">${it.type === "effect" ? "⚡ efeito (1x)" : "🌫️ ambiente (loop)"} • ${it.url}</div>`;
+    left.innerHTML = `
+      <div class="tname">${cleanName(f.name)}</div>
+      <div class="tfile">${f.name}</div>
+    `;
 
-    // buttons
+    const actions = document.createElement("div");
+    actions.className = "track-actions";
+
     const amb = document.createElement("button");
-    amb.className = "btn";
+    amb.className = "pill amb";
     amb.textContent = "🌫️ Ambiente";
-    if (it.type === "effect"){
-      amb.disabled = true;
-      amb.style.opacity = "0.45";
-    }
+    amb.onclick = () => playAmbient(f.url, amb);
 
     const efx = document.createElement("button");
-    efx.className = "btn";
-    efx.textContent = "⚡ Efeito";
+    efx.className = "pill efx";
+    efx.textContent = "✨ Efeito";
+    efx.onclick = () => playEffect(f.url);
 
-    // mix row (always visible)
-    const mixWrap = document.createElement("div");
-    mixWrap.className = "mix";
-    mixWrap.innerHTML = `<label>🎚️ Volume</label>`;
+    actions.appendChild(amb);
+    actions.appendChild(efx);
 
-    const slider = document.createElement("input");
-    slider.type = "range";
-    slider.min = "0";
-    slider.max = "1";
-    slider.step = "0.01";
+    row.appendChild(left);
+    row.appendChild(actions);
 
-    const urlKey = it.url; // key for localStorage mix (relative)
-    slider.value = String(getTrackMix(urlKey));
-
-    const val = document.createElement("span");
-    val.className = "val";
-    val.textContent = Math.round(Number(slider.value)*100) + "%";
-
-    slider.addEventListener("input", ()=>{
-      val.textContent = Math.round(Number(slider.value)*100) + "%";
-      setTrackMix(urlKey, Number(slider.value));
-      // live update if this track is playing as ambient
-      const abs = new URL(urlKey, window.location.href).href;
-      const layer = findLayer(abs);
-      if (layer){
-        try{ layer.audio.volume = finalAmbientVolume(layer.urlKey); }catch(_){}
-      }
-    });
-
-    mixWrap.appendChild(slider);
-    mixWrap.appendChild(val);
-
-    // click handlers
-    amb.addEventListener("click", (e)=>{
-      e.preventDefault(); e.stopPropagation();
-      blurActive();
-      const urlAbs = new URL(urlKey, window.location.href).href;
-      playAmbient(urlKey, urlAbs, amb, it.title);
-    });
-
-    efx.addEventListener("click", (e)=>{
-      e.preventDefault(); e.stopPropagation();
-      blurActive();
-      const urlAbs = new URL(urlKey, window.location.href).href;
-      playEffect(urlKey, urlAbs);
-    });
-
-    // compose: left cell becomes left+mix under it
-    const leftWrap = document.createElement("div");
-    leftWrap.appendChild(left);
-    leftWrap.appendChild(mixWrap);
-
-    row.appendChild(leftWrap);
-    row.appendChild(amb);
-    row.appendChild(efx);
-    trackList.appendChild(row);
-  });
+    list.appendChild(row);
+  }
 }
 
-// ---------------- Wire up ----------------
-document.addEventListener("DOMContentLoaded", ()=>{
-  loadMix();
-  loadThemes();
-  loadScenes();
+function showGlobalResults(matches){
+  const box = $("globalResults");
+  const list = $("globalResultsList");
+  if (!box || !list) return;
 
-  document.getElementById("reloadBtn")?.addEventListener("click", ()=>{
-    CACHE.ts = 0;
-    loadThemes();
+  list.innerHTML = "";
+  if (!matches.length){
+    list.innerHTML = `<div class="hint">Nenhum resultado.</div>`;
+  } else {
+    for (const m of matches){
+      const row = document.createElement("div");
+      row.className = "track";
+
+      const left = document.createElement("div");
+      left.innerHTML = `
+        <div class="tname">${cleanName(m.file.name)}</div>
+        <div class="tfile">${m.theme} • ${m.file.name}</div>
+      `;
+
+      const actions = document.createElement("div");
+      actions.className = "track-actions";
+
+      const open = document.createElement("button");
+      open.className = "pill";
+      open.textContent = "📁 Abrir Tema";
+      open.onclick = () => openTheme(m.theme);
+
+      const amb = document.createElement("button");
+      amb.className = "pill amb";
+      amb.textContent = "🌫️ Ambiente";
+      amb.onclick = () => playAmbient(m.file.url, amb);
+
+      const efx = document.createElement("button");
+      efx.className = "pill efx";
+      efx.textContent = "✨ Efeito";
+      efx.onclick = () => playEffect(m.file.url);
+
+      actions.appendChild(open);
+      actions.appendChild(amb);
+      actions.appendChild(efx);
+
+      row.appendChild(left);
+      row.appendChild(actions);
+      list.appendChild(row);
+    }
+  }
+
+  box.classList.remove("hidden");
+}
+
+function hideGlobalResults(){
+  $("globalResults")?.classList.add("hidden");
+}
+
+function findGlobalMatches(query){
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+
+  const matches = [];
+  for (const theme of THEME_KEYS){
+    for (const f of THEMES[theme]){
+      const name = cleanName(f.name).toLowerCase();
+      const raw = f.name.toLowerCase();
+      if (theme.toLowerCase().includes(q) || name.includes(q) || raw.includes(q)){
+        matches.push({ theme, file: f });
+        if (matches.length >= 30) return matches; // limite
+      }
+    }
+  }
+  return matches;
+}
+
+// ---------- Init ----------
+async function init(){
+  setPill(null, "Clique em um áudio para liberar som");
+
+  // controles
+  $("stopAmbient")?.addEventListener("click", stopAmbient);
+  $("stopEffects")?.addEventListener("click", stopEffects);
+
+  $("volAmbient")?.addEventListener("input", ()=>{
+    if (ambientAudio) ambientAudio.volume = getVolAmbient();
   });
 
-  themeFilter?.addEventListener("input", renderThemes);
-
-  document.getElementById("closeBtn")?.addEventListener("click", closeModal);
-  modal?.addEventListener("click", (e)=>{ if (e.target === modal) closeModal(); });
-
-  themeSearch?.addEventListener("input", (e)=>renderTrackList(e.target.value));
-
-  document.getElementById("volAmbient")?.addEventListener("input", syncAmbientVolumes);
-  document.getElementById("stopAmbient")?.addEventListener("click", stopAmbient);
-  document.getElementById("stopEffects")?.addEventListener("click", stopEffects);
-
-  // scenes
-  document.getElementById("saveScene")?.addEventListener("click", openSceneNameModal);
-  document.getElementById("applyScene")?.addEventListener("click", ()=>{
-    const name = document.getElementById("sceneSelect")?.value;
-    if (name) applySceneByName(name);
-  });
-  document.getElementById("deleteScene")?.addEventListener("click", deleteSelectedScene);
-
-  // scene modal
-  document.getElementById("sceneNameConfirm")?.addEventListener("click", confirmSaveSceneFromModal);
-  document.getElementById("sceneNameCancel")?.addEventListener("click", closeSceneNameModal);
-  document.getElementById("sceneNameModal")?.addEventListener("click", (e)=>{
-    if (e.target?.id === "sceneNameModal") closeSceneNameModal();
-  });
-  document.getElementById("sceneNameInput")?.addEventListener("keydown", (e)=>{
-    if (e.key === "Enter") confirmSaveSceneFromModal();
-    if (e.key === "Escape") closeSceneNameModal();
+  $("volEffects")?.addEventListener("input", ()=>{
+    // efeitos novos já pegam o volume; não mexemos nos já tocando
   });
 
-  // iOS: tocar fora tira teclado
-  document.addEventListener("touchstart", (e)=>{
-    if (!e.target.matches("input, textarea")) blurActive();
-  }, { passive:true });
+  // desbloqueio por clique em qualquer lugar
+  window.addEventListener("pointerdown", unlockAudioOnce, { once:true });
+
+  // modal
+  $("modalBack")?.addEventListener("click", closeTheme);
+  $("modal")?.addEventListener("click", (e)=>{
+    if (e.target === $("modal")) closeTheme();
+  });
+  window.addEventListener("keydown", (e)=>{
+    if (e.key === "Escape") closeTheme();
+  });
+
+  $("themeSearch")?.addEventListener("input", (e)=>{
+    if (!currentTheme) return;
+    renderTrackList(currentTheme, e.target.value);
+  });
+
+  // busca global
+  $("globalSearch")?.addEventListener("input", (e)=>{
+    const q = e.target.value;
+    renderThemeGrid(q);
+
+    const matches = findGlobalMatches(q);
+    if (q.trim().length >= 2){
+      showGlobalResults(matches);
+    } else {
+      hideGlobalResults();
+    }
+  });
+
+  $("closeResults")?.addEventListener("click", ()=>{
+    hideGlobalResults();
+    $("globalSearch").value = "";
+    renderThemeGrid("");
+  });
+
+  // tenta cache primeiro
+  const cached = loadCache();
+  if (cached){
+    THEMES = cached.THEMES;
+    THEME_KEYS = cached.THEME_KEYS;
+    setStatus("Carregado do cache ✅ (atualizando em segundo plano…)");
+
+    renderThemeGrid("");
+
+    // atualiza em segundo plano
+    refreshFromGithub().catch(()=>{});
+    return;
+  }
+
+  // senão, carrega normal
+  await refreshFromGithub();
+}
+
+async function refreshFromGithub(){
+  setStatus("Carregando temas do GitHub…");
+
+  const files = await scanMp3Recursive(AUDIO_ROOT);
+  THEMES = groupByTheme(files);
+  THEME_KEYS = Object.keys(THEMES).sort((a,b)=>a.localeCompare(b));
+
+  saveCache({ THEMES, THEME_KEYS });
+
+  if (!THEME_KEYS.length){
+    setStatus("Não achei MP3 em /audio. Suba em audio/AlgumaPasta/arquivo.mp3");
+    renderThemeGrid("");
+    return;
+  }
+
+  setStatus(`Pronto ✅ Temas: ${THEME_KEYS.length} • Áudios: ${files.length}`);
+  renderThemeGrid("");
+}
+
+window.addEventListener("DOMContentLoaded", ()=>{
+  init().catch(err=>{
+    console.error(err);
+    setPill(false, "Erro ao carregar. Veja console (F12) ou tente de novo.");
+    setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
+  });
 });
