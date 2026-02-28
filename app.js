@@ -1,574 +1,433 @@
-// =====================================================
-// Jogatina Soundboard — Auto temas por pasta (GitHub API)
-// Repo: https://zimbpdf0.github.io/Pdf001/
-// OWNER/REPO já configurados
-// =====================================================
+/* Jogatina Soundboard - versão estável (do jeito que você queria no início)
+   - GitHub Pages
+   - lista MP3 automaticamente da pasta /audio via GitHub API
+   - cada subpasta vira um "Tema"
+   - botões: tocar como Ambiente (loop, 1 canal) ou Efeito (multi-camadas)
+   - Sets salvos em localStorage (ambiente + efeitos)
+*/
 
-const OWNER = "zimbpdf0";
-const REPO  = "Pdf001";
-const BRANCH = "main";
-const AUDIO_ROOT = "audio";
+const OWNER = "pdfto314";      // <<< ajuste aqui
+const REPO  = "test";          // <<< ajuste aqui
+const BRANCH = "main";         // <<< ajuste aqui
+const AUDIO_PATH = "audio";    // <<< pasta base
 
-// Cache (pra não bater na API toda hora)
-const CACHE_KEY = "jsb_cache_v1";
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 min
+const EXT_OK = [".mp3", ".wav", ".ogg", ".m4a"];
 
-// 2 canais: ambiente (loop) + efeitos (one-shot e pode sobrepor)
-let ambientAudio = null;
-let ambientNowBtn = null;
+const els = {
+  status: document.getElementById("status"),
+  themes: document.getElementById("themes"),
+  themeFilter: document.getElementById("themeFilter"),
+  reloadBtn: document.getElementById("reloadBtn"),
+  tracksTitle: document.getElementById("tracksTitle"),
+  tracks: document.getElementById("tracks"),
 
-let effectAudios = [];
-const MAX_EFFECTS = 6;
+  unlockBtn: document.getElementById("unlockBtn"),
+  unlockDot: document.getElementById("unlockDot"),
+  ambientVol: document.getElementById("ambientVol"),
+  fxVol: document.getElementById("fxVol"),
+  stopAmbientBtn: document.getElementById("stopAmbientBtn"),
+  clearFxBtn: document.getElementById("clearFxBtn"),
+  nowAmbient: document.getElementById("nowAmbient"),
+  fxCount: document.getElementById("fxCount"),
 
-// iOS/Safari/Edge costumam exigir “unlock” por gesto do usuário
-let audioUnlocked = false;
-let audioCtx = null;
+  setSelect: document.getElementById("setSelect"),
+  applySetBtn: document.getElementById("applySetBtn"),
+  saveSetBtn: document.getElementById("saveSetBtn"),
+  deleteSetBtn: document.getElementById("deleteSetBtn"),
+  setName: document.getElementById("setName"),
+};
 
-function $(id){ return document.getElementById(id); }
+let unlocked = false;
 
-function setPill(ok, text){
-  const dot = $("audioDot");
-  const label = $("audioText");
-  if (!dot || !label) return;
+// Um canal de ambiente (loop)
+const ambient = new Audio();
+ambient.loop = true;
+ambient.preload = "auto";
 
-  if (ok === true){
-    dot.style.background = "var(--good)";
-    dot.style.boxShadow = "0 0 0 4px rgba(62,224,127,.12)";
-  } else if (ok === false){
-    dot.style.background = "var(--bad)";
-    dot.style.boxShadow = "0 0 0 4px rgba(255,90,106,.12)";
-  } else {
-    dot.style.background = "var(--warn)";
-    dot.style.boxShadow = "0 0 0 4px rgba(255,209,102,.12)";
-  }
-  label.textContent = text;
+// Multi canal de efeitos
+const fxPlayers = new Map(); // url -> Audio
+
+function ghUrl(path){
+  const p = encodeURIComponent(path).replace(/%2F/g, "/");
+  return `https://api.github.com/repos/${OWNER}/${REPO}/contents/${p}?ref=${encodeURIComponent(BRANCH)}`;
 }
 
-function setStatus(text){
-  const s = $("status");
-  if (s) s.textContent = text;
+function isAudioFile(name){
+  const low = name.toLowerCase();
+  return EXT_OK.some(ext => low.endsWith(ext));
 }
 
-function getVolAmbient(){ return Number($("volAmbient")?.value ?? 0.85); }
-function getVolEffects(){ return Number($("volEffects")?.value ?? 0.90); }
-
-function cleanName(filename){
-  return filename
-    .replace(/\.mp3$/i, "")
+function niceTitle(fileName){
+  // "forest_rain_01.mp3" -> "forest rain 01"
+  return fileName
+    .replace(/\.[^/.]+$/, "")
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function themeEmoji(folder){
-  const n = folder.toLowerCase();
-
-  // chuva / tempestade
-  if (n.includes("chuva") || n.includes("rain")) return "🌧️";
-  if (n.includes("trov") || n.includes("thunder") || n.includes("tempest")) return "⛈️";
-
-  // lugares
-  if (n.includes("vila") || n.includes("cidade") || n.includes("town")) return "🏘️";
-  if (n.includes("taverna") || n.includes("tavern") || n.includes("inn")) return "🍺";
-  if (n.includes("floresta") || n.includes("forest") || n.includes("woods")) return "🌲";
-  if (n.includes("caverna") || n.includes("cave") || n.includes("dungeon")) return "🕳️";
-  if (n.includes("castelo") || n.includes("castle") || n.includes("fort")) return "🏰";
-  if (n.includes("templo") || n.includes("temple") || n.includes("ruin")) return "🏛️";
-  if (n.includes("montanha") || n.includes("mount")) return "⛰️";
-  if (n.includes("mar") || n.includes("oceano") || n.includes("sea")) return "🌊";
-  if (n.includes("deserto") || n.includes("desert")) return "🏜️";
-
-  // clima / vibes
-  if (n.includes("noite") || n.includes("night")) return "🌙";
-  if (n.includes("neve") || n.includes("snow") || n.includes("gelo")) return "❄️";
-  if (n.includes("vento") || n.includes("wind")) return "🌬️";
-  if (n.includes("fogo") || n.includes("fire")) return "🔥";
-  if (n.includes("tens") || n.includes("susp") || n.includes("horror")) return "🕯️";
-  if (n.includes("batalha") || n.includes("battle") || n.includes("boss")) return "⚔️";
-  if (n.includes("magia") || n.includes("arcano") || n.includes("magic")) return "✨";
-
-  return "🎧";
+function setStatus(msg){
+  els.status.textContent = msg;
 }
 
-// cor “surpresa” (determinística por texto)
-function hashHue(str){
-  let h = 0;
-  for (let i=0;i<str.length;i++) h = (h*31 + str.charCodeAt(i)) >>> 0;
-  return h % 360;
-}
-
-function unlockAudioOnce(){
-  if (audioUnlocked) return;
-  audioUnlocked = true;
-
-  try{
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC){
-      audioCtx = new AC();
-      // cria um som mudo curtinho pra “destravar”
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      g.gain.value = 0.00001;
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(); o.stop(audioCtx.currentTime + 0.02);
-      audioCtx.resume?.();
+async function fetchJson(url){
+  const res = await fetch(url, {
+    headers: {
+      "Accept": "application/vnd.github+json"
     }
-  }catch(_){}
+  });
+  if (!res.ok){
+    const text = await res.text().catch(()=>"");
+    throw new Error(`GitHub API ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
+}
 
-  setPill(true, "Áudio liberado ✅");
+async function listDir(path){
+  const data = await fetchJson(ghUrl(path));
+  if (!Array.isArray(data)) return [];
+  return data;
+}
+
+async function loadLibrary(){
+  els.themes.innerHTML = "";
+  els.tracks.innerHTML = "";
+  els.tracksTitle.textContent = "Selecione um tema";
+
+  setStatus("Carregando temas do GitHub…");
+  const root = await listDir(AUDIO_PATH);
+
+  const folders = root
+    .filter(x => x.type === "dir")
+    .sort((a,b) => a.name.localeCompare(b.name, "pt-BR"));
+
+  if (folders.length === 0){
+    setStatus(`Nenhuma pasta em /${AUDIO_PATH}. Crie: audio/Floresta/*.mp3`);
+    return;
+  }
+
+  // Pré-carrega contagem (sem baixar tudo pesado)
+  const themes = [];
+  for (const f of folders){
+    const children = await listDir(`${AUDIO_PATH}/${f.name}`);
+    const audios = children.filter(x => x.type === "file" && isAudioFile(x.name));
+    themes.push({
+      name: f.name,
+      path: `${AUDIO_PATH}/${f.name}`,
+      count: audios.length,
+      // guarda lista crua pra abrir mais rápido
+      items: audios.map(a => ({
+        title: niceTitle(a.name),
+        file: a.name,
+        url: a.download_url, // direto pro raw CDN
+      }))
+    });
+  }
+
+  renderThemes(themes);
+  setStatus(`Pronto: ${themes.length} tema(s).`);
+  window.__THEMES = themes;
+}
+
+function renderThemes(themes){
+  const filter = (els.themeFilter.value || "").toLowerCase().trim();
+  const filtered = !filter ? themes : themes.filter(t => t.name.toLowerCase().includes(filter));
+
+  els.themes.innerHTML = "";
+  for (const t of filtered){
+    const btn = document.createElement("button");
+    btn.className = "themeBtn";
+    btn.type = "button";
+    btn.innerHTML = `
+      <span class="name">${escapeHtml(t.name)}</span>
+      <span class="count">${t.count}</span>
+    `;
+    btn.addEventListener("click", () => openTheme(t));
+    els.themes.appendChild(btn);
+  }
+
+  if (filtered.length === 0){
+    const div = document.createElement("div");
+    div.className = "status";
+    div.textContent = "Nenhum tema com esse filtro.";
+    els.themes.appendChild(div);
+  }
+}
+
+function openTheme(theme){
+  els.tracksTitle.textContent = `Tema: ${theme.name}`;
+  els.tracks.innerHTML = "";
+
+  const items = theme.items || [];
+  if (items.length === 0){
+    const div = document.createElement("div");
+    div.className = "status";
+    div.textContent = "Sem arquivos de áudio nesta pasta.";
+    els.tracks.appendChild(div);
+    return;
+  }
+
+  for (const it of items){
+    const row = document.createElement("div");
+    row.className = "track";
+    row.innerHTML = `
+      <div class="left">
+        <div class="title">${escapeHtml(it.title)}</div>
+        <div class="meta">${escapeHtml(it.file)}</div>
+      </div>
+      <div class="right">
+        <button class="btn primary" type="button">Ambiente</button>
+        <button class="btn" type="button">Efeito</button>
+      </div>
+    `;
+
+    const [btnAmb, btnFx] = row.querySelectorAll("button");
+    btnAmb.addEventListener("click", () => playAmbient(it));
+    btnFx.addEventListener("click", () => playFx(it));
+    els.tracks.appendChild(row);
+  }
+}
+
+function playAmbient(track){
+  ensureUnlocked();
+  ambient.pause();
+  ambient.src = track.url;
+  ambient.volume = clamp01(parseFloat(els.ambientVol.value));
+  ambient.currentTime = 0;
+  ambient.play().catch(()=>{ /* iOS pode bloquear até unlock */ });
+
+  els.nowAmbient.textContent = `Ambiente: ${track.title}`;
+  saveLastScene();
 }
 
 function stopAmbient(){
-  if (ambientAudio){
-    ambientAudio.pause();
-    ambientAudio.currentTime = 0;
-    ambientAudio = null;
+  ambient.pause();
+  ambient.src = "";
+  els.nowAmbient.textContent = "Ambiente: —";
+  saveLastScene();
+}
+
+function playFx(track){
+  ensureUnlocked();
+
+  // Se já está tocando, reinicia
+  const existing = fxPlayers.get(track.url);
+  if (existing){
+    existing.currentTime = 0;
+    existing.play().catch(()=>{});
+    return;
   }
-  if (ambientNowBtn){
-    ambientNowBtn.classList.remove("now");
-    ambientNowBtn = null;
+
+  const a = new Audio(track.url);
+  a.preload = "auto";
+  a.volume = clamp01(parseFloat(els.fxVol.value));
+  a.addEventListener("ended", () => {
+    fxPlayers.delete(track.url);
+    updateFxCount();
+    saveLastScene();
+  });
+  fxPlayers.set(track.url, a);
+  updateFxCount();
+  a.play().catch(()=>{});
+  saveLastScene();
+}
+
+function clearFx(){
+  for (const a of fxPlayers.values()){
+    try{ a.pause(); }catch(e){}
+  }
+  fxPlayers.clear();
+  updateFxCount();
+  saveLastScene();
+}
+
+function updateFxCount(){
+  els.fxCount.textContent = `Efeitos: ${fxPlayers.size}`;
+}
+
+function clamp01(v){
+  if (Number.isNaN(v)) return 0.7;
+  return Math.max(0, Math.min(1, v));
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* iOS unlock */
+function ensureUnlocked(){
+  if (unlocked) return;
+  // tentar "desbloquear" automaticamente ao clicar em play
+  // mas o botão dedicado é o mais confiável
+}
+
+async function unlockAudio(){
+  try{
+    // tocar um áudio "mudo" rápido para liberar
+    const a = new Audio();
+    a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+    a.volume = 0;
+    await a.play();
+    a.pause();
+    unlocked = true;
+    els.unlockDot.classList.add("on");
+  }catch(e){
+    // mesmo se falhar, marca como tentado
+    unlocked = true;
+    els.unlockDot.classList.add("on");
   }
 }
 
-function stopEffects(){
-  for (const a of effectAudios){
-    try{ a.pause(); a.currentTime = 0; }catch(_){}
+/* Sets (localStorage) */
+const LS_KEY = "jogatina_sets_v1";
+const LS_LAST = "jogatina_last_scene_v1";
+
+function readSets(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    const obj = raw ? JSON.parse(raw) : { sets: [] };
+    if (!Array.isArray(obj.sets)) obj.sets = [];
+    return obj;
+  }catch{
+    return { sets: [] };
   }
-  effectAudios = [];
 }
 
-function playAmbient(url, btn){
-  unlockAudioOnce();
+function writeSets(obj){
+  localStorage.setItem(LS_KEY, JSON.stringify(obj));
+}
+
+function refreshSetSelect(){
+  const { sets } = readSets();
+  els.setSelect.innerHTML = "";
+  const opt0 = document.createElement("option");
+  opt0.value = "";
+  opt0.textContent = "Selecione um set…";
+  els.setSelect.appendChild(opt0);
+
+  for (const s of sets){
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.name;
+    els.setSelect.appendChild(opt);
+  }
+}
+
+function currentScene(){
+  return {
+    ambient: ambient.src ? { url: ambient.src, title: els.nowAmbient.textContent.replace(/^Ambiente:\s*/,"") } : null,
+    fx: [...fxPlayers.keys()],
+    ambientVol: clamp01(parseFloat(els.ambientVol.value)),
+    fxVol: clamp01(parseFloat(els.fxVol.value)),
+    ts: Date.now()
+  };
+}
+
+function saveSet(){
+  const name = (els.setName.value || "").trim();
+  if (!name){
+    alert("Digite um nome para o set.");
+    return;
+  }
+  const obj = readSets();
+  const id = String(Date.now());
+  obj.sets.push({ id, name, scene: currentScene() });
+  writeSets(obj);
+  els.setName.value = "";
+  refreshSetSelect();
+  els.setSelect.value = id;
+}
+
+function deleteSet(){
+  const id = els.setSelect.value;
+  if (!id){
+    alert("Selecione um set para excluir.");
+    return;
+  }
+  const obj = readSets();
+  obj.sets = obj.sets.filter(s => s.id !== id);
+  writeSets(obj);
+  refreshSetSelect();
+}
+
+function applySet(){
+  const id = els.setSelect.value;
+  if (!id){
+    alert("Selecione um set para aplicar.");
+    return;
+  }
+  const { sets } = readSets();
+  const s = sets.find(x => x.id === id);
+  if (!s) return;
+
+  // volumes
+  els.ambientVol.value = clamp01(s.scene.ambientVol ?? 0.7);
+  els.fxVol.value = clamp01(s.scene.fxVol ?? 0.9);
+  ambient.volume = clamp01(parseFloat(els.ambientVol.value));
+  for (const a of fxPlayers.values()){
+    a.volume = clamp01(parseFloat(els.fxVol.value));
+  }
+
+  // áudio
   stopAmbient();
+  clearFx();
 
-  ambientAudio = new Audio(url);
-  ambientAudio.loop = true;
-  ambientAudio.volume = getVolAmbient();
-
-  ambientNowBtn = btn;
-  ambientNowBtn?.classList.add("now");
-
-  ambientAudio.play().then(()=>{
-    setPill(true, "Tocando ambiente (loop) ✅");
-  }).catch(()=>{
-    setPill(false, "Bloqueado pelo navegador. Clique de novo ou use Safari/Chrome.");
-  });
-}
-
-function playEffect(url){
-  unlockAudioOnce();
-
-  // limita sobreposição
-  if (effectAudios.length >= MAX_EFFECTS){
-    const old = effectAudios.shift();
-    try{ old.pause(); old.currentTime = 0; }catch(_){}
+  if (s.scene.ambient?.url){
+    playAmbient({ url: s.scene.ambient.url, title: s.scene.ambient.title || "Ambiente" });
   }
-
-  const a = new Audio(url);
-  a.loop = false;
-  a.volume = getVolEffects();
-  effectAudios.push(a);
-
-  a.play().then(()=>{
-    setPill(true, "Efeito tocando ✅");
-  }).catch(()=>{
-    setPill(false, "Bloqueado pelo navegador. Clique de novo ou use Safari/Chrome.");
-  });
-
-  a.addEventListener("ended", ()=>{
-    effectAudios = effectAudios.filter(x => x !== a);
-  });
-}
-
-// ---------- GitHub API ----------
-async function listGithubDir(path){
-  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(path)}?ref=${BRANCH}`;
-  const r = await fetch(api, { cache: "no-store" });
-  if (!r.ok) throw new Error(`GitHub API erro ${r.status} em ${path}`);
-  return r.json();
-}
-
-async function scanMp3Recursive(path){
-  const items = await listGithubDir(path);
-  let files = [];
-
-  for (const it of items){
-    if (it.type === "dir"){
-      const deeper = await scanMp3Recursive(it.path);
-      files = files.concat(deeper);
-    } else if (it.type === "file" && it.name.toLowerCase().endsWith(".mp3")){
-      files.push({
-        name: it.name,
-        path: it.path,
-        url: it.download_url
-      });
-    }
+  for (const url of (s.scene.fx || [])){
+    playFx({ url, title: "Efeito" });
   }
-  return files;
+  saveLastScene();
 }
 
-function groupByTheme(files){
-  const groups = {};
-  for (const f of files){
-    const rel = f.path.startsWith(AUDIO_ROOT + "/")
-      ? f.path.slice((AUDIO_ROOT + "/").length)
-      : f.path;
-
-    const folder = rel.includes("/") ? rel.split("/")[0] : "Outros";
-    (groups[folder] ||= []).push(f);
-  }
-  // ordenar
-  for (const k of Object.keys(groups)){
-    groups[k].sort((a,b)=>a.name.localeCompare(b.name));
-  }
-  return groups;
+function saveLastScene(){
+  try{ localStorage.setItem(LS_LAST, JSON.stringify(currentScene())); }catch{}
 }
 
-function saveCache(data){
+function restoreLastScene(){
   try{
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      at: Date.now(),
-      data
-    }));
-  }catch(_){}
-}
-
-function loadCache(){
-  try{
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj?.at || !obj?.data) return null;
-    if (Date.now() - obj.at > CACHE_TTL_MS) return null;
-    return obj.data;
-  }catch(_){
-    return null;
-  }
-}
-
-// ---------- UI ----------
-let THEMES = {};   // { folder: [files...] }
-let THEME_KEYS = []; // sorted
-let currentTheme = null;
-
-function renderThemeGrid(filterText=""){
-  const grid = $("themeGrid");
-  if (!grid) return;
-  grid.innerHTML = "";
-
-  const q = filterText.trim().toLowerCase();
-
-  const keys = THEME_KEYS.filter(folder => {
-    if (!q) return true;
-    if (folder.toLowerCase().includes(q)) return true;
-    // também procura dentro das faixas
-    return THEMES[folder].some(f => f.name.toLowerCase().includes(q));
-  });
-
-  if (!keys.length){
-    setStatus("Nada encontrado. Tente outro termo.");
-    return;
-  }
-
-  setStatus(`Temas: ${keys.length} • Áudios: ${THEME_KEYS.reduce((n,k)=>n+THEMES[k].length,0)}`);
-
-  for (const folder of keys){
-    const hue = hashHue(folder);
-    const emoji = themeEmoji(folder);
-
-    const card = document.createElement("div");
-    card.className = "theme-card";
-
-    const icon = document.createElement("div");
-    icon.className = "theme-emoji";
-    icon.textContent = emoji;
-    icon.style.borderColor = `hsla(${hue}, 90%, 70%, .25)`;
-    icon.style.boxShadow = `0 0 0 4px hsla(${hue}, 90%, 70%, .08)`;
-
-    const info = document.createElement("div");
-    info.className = "theme-info";
-    info.innerHTML = `
-      <div class="name">${folder}</div>
-      <div class="meta">${THEMES[folder].length} áudio(s) • clique para abrir</div>
-    `;
-
-    card.appendChild(icon);
-    card.appendChild(info);
-
-    card.onclick = () => openTheme(folder);
-
-    grid.appendChild(card);
-  }
-}
-
-function openTheme(folder){
-  currentTheme = folder;
-  const modal = $("modal");
-  const title = $("modalTitle");
-  const sub = $("modalSub");
-  const emojiEl = $("modalEmoji");
-  const themeSearch = $("themeSearch");
-
-  if (!modal || !title || !sub || !emojiEl) return;
-
-  title.textContent = folder;
-  emojiEl.textContent = themeEmoji(folder);
-  sub.textContent = `${THEMES[folder].length} áudio(s)`;
-
-  modal.classList.remove("hidden");
-  if (themeSearch){
-    themeSearch.value = "";
-    themeSearch.focus();
-  }
-
-  renderTrackList(folder, "");
-}
-
-function closeTheme(){
-  const modal = $("modal");
-  if (modal) modal.classList.add("hidden");
-  currentTheme = null;
-}
-
-function renderTrackList(folder, filterText){
-  const list = $("trackList");
-  if (!list) return;
-  list.innerHTML = "";
-
-  const q = filterText.trim().toLowerCase();
-  const items = THEMES[folder].filter(f => {
-    if (!q) return true;
-    return f.name.toLowerCase().includes(q) || cleanName(f.name).toLowerCase().includes(q);
-  });
-
-  if (!items.length){
-    const empty = document.createElement("div");
-    empty.className = "hint";
-    empty.textContent = "Nenhum áudio encontrado nesse tema.";
-    list.appendChild(empty);
-    return;
-  }
-
-  for (const f of items){
-    const row = document.createElement("div");
-    row.className = "track";
-
-    const left = document.createElement("div");
-    left.innerHTML = `
-      <div class="tname">${cleanName(f.name)}</div>
-      <div class="tfile">${f.name}</div>
-    `;
-
-    const actions = document.createElement("div");
-    actions.className = "track-actions";
-
-    const amb = document.createElement("button");
-    amb.className = "pill amb";
-    amb.textContent = "🌫️ Ambiente";
-    amb.onclick = () => playAmbient(f.url, amb);
-
-    const efx = document.createElement("button");
-    efx.className = "pill efx";
-    efx.textContent = "✨ Efeito";
-    efx.onclick = () => playEffect(f.url);
-
-    actions.appendChild(amb);
-    actions.appendChild(efx);
-
-    row.appendChild(left);
-    row.appendChild(actions);
-
-    list.appendChild(row);
-  }
-}
-
-function showGlobalResults(matches){
-  const box = $("globalResults");
-  const list = $("globalResultsList");
-  if (!box || !list) return;
-
-  list.innerHTML = "";
-  if (!matches.length){
-    list.innerHTML = `<div class="hint">Nenhum resultado.</div>`;
-  } else {
-    for (const m of matches){
-      const row = document.createElement("div");
-      row.className = "track";
-
-      const left = document.createElement("div");
-      left.innerHTML = `
-        <div class="tname">${cleanName(m.file.name)}</div>
-        <div class="tfile">${m.theme} • ${m.file.name}</div>
-      `;
-
-      const actions = document.createElement("div");
-      actions.className = "track-actions";
-
-      const open = document.createElement("button");
-      open.className = "pill";
-      open.textContent = "📁 Abrir Tema";
-      open.onclick = () => openTheme(m.theme);
-
-      const amb = document.createElement("button");
-      amb.className = "pill amb";
-      amb.textContent = "🌫️ Ambiente";
-      amb.onclick = () => playAmbient(m.file.url, amb);
-
-      const efx = document.createElement("button");
-      efx.className = "pill efx";
-      efx.textContent = "✨ Efeito";
-      efx.onclick = () => playEffect(m.file.url);
-
-      actions.appendChild(open);
-      actions.appendChild(amb);
-      actions.appendChild(efx);
-
-      row.appendChild(left);
-      row.appendChild(actions);
-      list.appendChild(row);
+    const raw = localStorage.getItem(LS_LAST);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (!s) return;
+    els.ambientVol.value = clamp01(s.ambientVol ?? 0.7);
+    els.fxVol.value = clamp01(s.fxVol ?? 0.9);
+    if (s.ambient?.url){
+      // não auto-play no iOS; só prepara
+      ambient.src = s.ambient.url;
+      ambient.loop = true;
+      ambient.volume = clamp01(parseFloat(els.ambientVol.value));
+      els.nowAmbient.textContent = `Ambiente: ${s.ambient.title || "—"}`;
     }
-  }
-
-  box.classList.remove("hidden");
+    updateFxCount();
+  }catch{}
 }
 
-function hideGlobalResults(){
-  $("globalResults")?.classList.add("hidden");
-}
+/* events */
+els.reloadBtn.addEventListener("click", () => loadLibrary().catch(err => setStatus(err.message)));
+els.themeFilter.addEventListener("input", () => renderThemes(window.__THEMES || []));
 
-function findGlobalMatches(query){
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-
-  const matches = [];
-  for (const theme of THEME_KEYS){
-    for (const f of THEMES[theme]){
-      const name = cleanName(f.name).toLowerCase();
-      const raw = f.name.toLowerCase();
-      if (theme.toLowerCase().includes(q) || name.includes(q) || raw.includes(q)){
-        matches.push({ theme, file: f });
-        if (matches.length >= 30) return matches; // limite
-      }
-    }
-  }
-  return matches;
-}
-
-// ---------- Init ----------
-async function init(){
-  setPill(null, "Clique em um áudio para liberar som");
-
-  // controles
-  $("stopAmbient")?.addEventListener("click", stopAmbient);
-  $("stopEffects")?.addEventListener("click", stopEffects);
-
-  $("volAmbient")?.addEventListener("input", ()=>{
-    if (ambientAudio) ambientAudio.volume = getVolAmbient();
-  });
-
-  $("volEffects")?.addEventListener("input", ()=>{
-    // efeitos novos já pegam o volume; não mexemos nos já tocando
-  });
-
-  // desbloqueio por clique em qualquer lugar
-  window.addEventListener("pointerdown", unlockAudioOnce, { once:true });
-
-  // modal
-  $("modalBack")?.addEventListener("click", closeTheme);
-  $("modal")?.addEventListener("click", (e)=>{
-    if (e.target === $("modal")) closeTheme();
-  });
-  window.addEventListener("keydown", (e)=>{
-    if (e.key === "Escape") closeTheme();
-  });
-
-  $("themeSearch")?.addEventListener("input", (e)=>{
-    if (!currentTheme) return;
-    renderTrackList(currentTheme, e.target.value);
-  });
-
-  // busca global
-  $("globalSearch")?.addEventListener("input", (e)=>{
-    const q = e.target.value;
-    renderThemeGrid(q);
-
-    const matches = findGlobalMatches(q);
-    if (q.trim().length >= 2){
-      showGlobalResults(matches);
-    } else {
-      hideGlobalResults();
-    }
-  });
-
-  $("closeResults")?.addEventListener("click", ()=>{
-    hideGlobalResults();
-    $("globalSearch").value = "";
-    renderThemeGrid("");
-  });
-
-  // tenta cache primeiro
-  const cached = loadCache();
-  if (cached){
-    THEMES = cached.THEMES;
-    THEME_KEYS = cached.THEME_KEYS;
-    setStatus("Carregado do cache ✅ (atualizando em segundo plano…)");
-
-    renderThemeGrid("");
-
-    // atualiza em segundo plano
-    refreshFromPlaylist().catch(()=>{});
-    return;
-  }
-
-  // senão, carrega normal
-  await refreshFromPlaylist();
-}
-
-async function refreshFromPlaylist(){
-  setStatus("Carregando playlist.json…");
-
-  // cache-buster pra evitar cache do Pages
-  const res = await fetch(`playlist.json?v=${Date.now()}`);
-  if (!res.ok){
-    throw new Error("Nao consegui carregar playlist.json (status " + res.status + ")");
-  }
-  const data = await res.json();
-
-  const themes = {};
-  const cats = Array.isArray(data?.categories) ? data.categories : [];
-  for (const c of cats){
-    const name = c?.name || "Outros";
-    const items = Array.isArray(c?.items) ? c.items : [];
-    themes[name] = items.map(it=>{
-      const url = it.url || "";
-      // nome de exibição: se tiver title usa, senão usa o nome do arquivo
-      let fname = it.title;
-      if (!fname){
-        try{
-          const parts = url.split("/");
-          fname = parts[parts.length-1] || url;
-        }catch(_){ fname = url; }
-      }
-      // mantém compatibilidade com UI antiga (f.name e f.url)
-      return { name: fname, url: url, path: url };
-    });
-    // ordenar
-    themes[name].sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-  }
-
-  THEMES = themes;
-  THEME_KEYS = Object.keys(THEMES).sort((a,b)=>a.localeCompare(b));
-
-  saveCache({ THEMES, THEME_KEYS });
-
-  setStatus(`Pronto ✅ ${THEME_KEYS.length} tema(s) • clique para abrir`);
-  renderThemeGrid("");
-}
-
-window.addEventListener("DOMContentLoaded", ()=>{
-  init().catch(err=>{
-    console.error(err);
-    setPill(false, "Erro ao carregar. Veja console (F12) ou tente de novo.");
-    setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
-  });
+els.unlockBtn.addEventListener("click", () => unlockAudio());
+els.ambientVol.addEventListener("input", () => { ambient.volume = clamp01(parseFloat(els.ambientVol.value)); saveLastScene(); });
+els.fxVol.addEventListener("input", () => {
+  const v = clamp01(parseFloat(els.fxVol.value));
+  for (const a of fxPlayers.values()) a.volume = v;
+  saveLastScene();
 });
+els.stopAmbientBtn.addEventListener("click", stopAmbient);
+els.clearFxBtn.addEventListener("click", clearFx);
+
+els.saveSetBtn.addEventListener("click", saveSet);
+els.deleteSetBtn.addEventListener("click", deleteSet);
+els.applySetBtn.addEventListener("click", applySet);
+
+/* init */
+refreshSetSelect();
+restoreLastScene();
+loadLibrary().catch(err => setStatus(err.message));

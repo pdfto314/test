@@ -1,107 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Jogatina Soundboard</title>
-  <link rel="stylesheet" href="style.css?v=303" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logo">🎛️</div>
+      <div class="logo">🎲</div>
       <div class="titles">
         <div class="h1">Jogatina Soundboard</div>
-        <div class="sub">Ambientes + efeitos • iPad friendly • sem GitHub API • mix por faixa</div>
+        <div class="h2">Ambientes + efeitos • iPad friendly • carrega MP3s da pasta /audio via GitHub API</div>
       </div>
     </div>
 
     <div class="controls">
-      <div class="pill">
-        <span id="audioDot" class="dot"></span>
-        <span id="audioText">Pronto.</span>
+      <button id="unlockBtn" class="btn primary" title="No iOS/iPad, toque 1x para liberar áudio">
+        <span class="dot" id="unlockDot"></span>
+        Áudio liberado
+      </button>
+
+      <div class="slider">
+        <label>Ambiente</label>
+        <input id="ambientVol" type="range" min="0" max="1" step="0.01" value="0.7" />
       </div>
 
-      <div class="vol">
-        <label>🌫️ Ambiente</label>
-        <input id="volAmbient" type="range" min="0" max="1" step="0.01" value="0.6" />
+      <div class="slider">
+        <label>Efeito</label>
+        <input id="fxVol" type="range" min="0" max="1" step="0.01" value="0.9" />
       </div>
 
-      <div class="vol">
-        <label>⚡ Efeito</label>
-        <input id="volEffects" type="range" min="0" max="1" step="0.01" value="0.85" />
-      </div>
-
-      <button class="btn ghost" id="stopAmbient">⏹️ Parar Ambiente</button>
-      <button class="btn ghost" id="stopEffects">🧹 Limpar Efeitos</button>
+      <button id="stopAmbientBtn" class="btn" title="Para o ambiente atual">Parar Ambiente</button>
+      <button id="clearFxBtn" class="btn" title="Para e limpa todos os efeitos">Limpar Efeitos</button>
     </div>
   </header>
 
-  <main class="wrap">
+  <main class="grid">
     <section class="card">
-      <div class="card-title">🎭 Temas</div>
-      <div class="card-sub">Clique em um tema para abrir a lista de áudios. (Toque na tela 1x para liberar som.)</div>
+      <div class="cardTitle">🗂️ Temas</div>
+      <div class="cardSub">Clique em um tema para abrir a lista de áudios.</div>
 
       <div class="row">
-        <input id="themeFilter" class="input" placeholder="Filtrar temas…" />
-        <button class="btn" id="reloadBtn">🔄 Recarregar</button>
+        <input id="themeFilter" class="input" placeholder="Filtrar temas..." />
+        <button id="reloadBtn" class="btn">Recarregar</button>
       </div>
 
-      <div id="themeGrid" class="grid"></div>
+      <div id="status" class="status">Carregando...</div>
+      <div id="themes" class="themes"></div>
     </section>
 
     <section class="card">
-      <div class="card-title">🧩 Sets (cenas)</div>
-      <div class="card-sub">Salve uma combinação de ambientes tocando (camadas) e aplique com 1 clique.</div>
+      <div class="cardTitle">🎵 Faixas</div>
+      <div class="cardSub" id="tracksTitle">Selecione um tema</div>
+
+      <div class="row rowWrap">
+        <span class="pill" id="nowAmbient">Ambiente: —</span>
+        <span class="pill" id="fxCount">Efeitos: 0</span>
+      </div>
+
+      <div id="tracks" class="tracks"></div>
+    </section>
+
+    <section class="card">
+      <div class="cardTitle">🧩 Sets (cenas)</div>
+      <div class="cardSub">Salve uma combinação (ambiente + efeitos) e aplique com 1 clique.</div>
 
       <div class="row">
-        <select id="sceneSelect" class="select"></select>
-        <button class="btn" id="applyScene">▶️ Aplicar</button>
-        <button class="btn" id="saveScene">💾 Salvar Set</button>
-        <button class="btn ghost" id="deleteScene">🗑️ Excluir</button>
+        <select id="setSelect" class="select"></select>
+        <button id="applySetBtn" class="btn primary">Aplicar</button>
       </div>
 
-      <div class="small">
-        Arquivos novos? rode <code>generate_playlist.bat</code> no Windows (sem Python) e depois Commit + Push.
+      <div class="row">
+        <input id="setName" class="input" placeholder="Nome do set (ex.: Taverna chuvosa)" />
       </div>
+
+      <div class="row">
+        <button id="saveSetBtn" class="btn">Salvar Set</button>
+        <button id="deleteSetBtn" class="btn danger">Excluir</button>
+      </div>
+
+      <details class="details">
+        <summary>⚙️ Config (GitHub)</summary>
+        <div class="mono small">
+          Edite <b>app.js</b> e ajuste: <code>OWNER</code>, <code>REPO</code>, <code>BRANCH</code>, <code>AUDIO_PATH</code>.<br/>
+          Estrutura recomendada: <code>audio/Tema/arquivos.mp3</code> (cada pasta vira um tema).
+        </div>
+      </details>
     </section>
   </main>
 
-  <!-- Modal tema -->
-  <div class="modal hidden" id="modal" aria-hidden="true">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div>
-          <div id="themeTitle" class="modal-title">Tema</div>
-          <div class="modal-sub">🌫️ Ambiente = liga/desliga (camadas). ⚡ Efeito = toca 1x. 🎚️ Volume por faixa fica salvo.</div>
-        </div>
-        <button class="btn ghost" id="closeBtn">✖</button>
-      </div>
+  <footer class="footer">
+    Dica: no iPad/iPhone, toque em “Áudio liberado” 1x antes de tentar tocar.
+  </footer>
 
-      <div class="row">
-        <input id="themeSearch" class="input" placeholder="Pesquisar áudio…" />
-      </div>
-
-      <div id="trackList" class="tracks"></div>
-    </div>
-  </div>
-
-  <!-- Modal salvar set -->
-  <div class="modal hidden" id="sceneNameModal" aria-hidden="true">
-    <div class="modal-card">
-      <div class="modal-title">Salvar Set</div>
-      <div class="modal-sub">Dê um nome para este set (combinação de ambientes tocando).</div>
-
-      <div class="row">
-        <input id="sceneNameInput" class="input" type="text" placeholder="Ex: Chuva + Mar" maxlength="40" />
-        <button class="btn" id="sceneNameConfirm">Salvar</button>
-        <button class="btn ghost" id="sceneNameCancel">Cancelar</button>
-      </div>
-
-      <div class="small" id="sceneNameHint"></div>
-    </div>
-  </div>
-
-  <script src="app.js?v=303"></script>
+  <script src="app.js"></script>
 </body>
 </html>
