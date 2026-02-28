@@ -1,43 +1,208 @@
 // =====================================================
 // Jogatina Soundboard — Auto temas por pasta (GitHub API)
-// Repo: https://pdfto314.github.io/test/
+// Site: https://pdfto314.github.io/test/
 // =====================================================
 
 const OWNER = "pdfto314";
 const REPO  = "test";
-const BRANCH = "main"; // Se não funcionar, troque para "master"
-const AUDIO_ROOT = "audio";
+const BRANCH = "main";        // se não funcionar, troque para "master"
+const AUDIO_ROOT = "audio";   // pasta /audio no repo
 
 // Cache
 const CACHE_TTL_MS = 10 * 60 * 1000;
 let CACHE = { ts: 0, themes: null };
 
 // Estado
-let THEMES = {};
+let THEMES = {};              // { folder: [{name,url}] }
 let currentTheme = null;
 
-function $(id){ return document.getElementById(id); }
+// Elementos
+const themeGrid  = document.getElementById("themeGrid");
+const modal      = document.getElementById("modal");
+const themeTitle = document.getElementById("themeTitle");
+const trackList  = document.getElementById("trackList");
+const themeSearch= document.getElementById("themeSearch");
+const closeBtn   = document.getElementById("closeBtn");
 
-// Detectar iPad/iPhone corretamente (inclusive iPadOS moderno)
+// -----------------------------------------------------
+// Utils
+// -----------------------------------------------------
 function isIOS(){
+  // iPadOS 13+ pode aparecer como MacIntel com touch
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-// Remove foco de qualquer input (fecha teclado)
 function removeFocus(){
-  if (document.activeElement) {
-    document.activeElement.blur();
+  document.activeElement?.blur?.();
+}
+
+// path seguro SEM quebrar as barras "/"
+function safePath(path){
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+async function listGithubDir(path){
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${safePath(path)}?ref=${BRANCH}`;
+  const r = await fetch(api, { cache: "no-store" });
+
+  if (!r.ok){
+    let msg = "";
+    try{
+      const j = await r.json();
+      if (j?.message) msg = ` — ${j.message}`;
+    }catch(_){}
+    throw new Error(`GitHub API erro ${r.status} em "${path}"${msg}`);
   }
+
+  return r.json();
 }
 
-async function fetchFromGitHub(path){
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Erro ao acessar GitHub");
-  return res.json();
+// -----------------------------------------------------
+// Render temas
+// -----------------------------------------------------
+function renderThemes(){
+  themeGrid.innerHTML = "";
+
+  const folders = Object.keys(THEMES).sort((a,b)=>a.localeCompare(b, "pt-BR"));
+
+  if (!folders.length){
+    const div = document.createElement("div");
+    div.className = "empty";
+    div.textContent = "Nenhum tema encontrado. Verifique a pasta /audio.";
+    themeGrid.appendChild(div);
+    return;
+  }
+
+  folders.forEach(folder => {
+    const card = document.createElement("div");
+    card.className = "theme-card";
+    card.textContent = folder;
+    card.addEventListener("click", () => openTheme(folder));
+    themeGrid.appendChild(card);
+  });
 }
 
+// -----------------------------------------------------
+// Modal
+// -----------------------------------------------------
+function openTheme(folder){
+  currentTheme = folder;
+  themeTitle.textContent = folder;
+  modal.classList.remove("hidden");
+
+  // limpa busca
+  themeSearch.value = "";
+
+  // iPad: não foca automaticamente (evita abrir teclado)
+  if (!isIOS()) themeSearch.focus();
+  else themeSearch.blur();
+
+  renderTrackList();
+}
+
+function closeModal(){
+  modal.classList.add("hidden");
+  removeFocus();
+}
+
+// -----------------------------------------------------
+// Lista de faixas
+// -----------------------------------------------------
+function renderTrackList(filter=""){
+  trackList.innerHTML = "";
+
+  const files = THEMES[currentTheme] || [];
+  const q = (filter || "").toLowerCase().trim();
+
+  const filtered = files.filter(f => f.name.toLowerCase().includes(q));
+
+  if (!filtered.length){
+    const div = document.createElement("div");
+    div.className = "empty";
+    div.textContent = "Nenhum áudio encontrado.";
+    trackList.appendChild(div);
+    return;
+  }
+
+  filtered.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "track";
+
+    const title = document.createElement("div");
+    title.className = "track-title";
+    title.textContent = f.name;
+
+    const amb = document.createElement("button");
+    amb.className = "btn";
+    amb.type = "button";
+    amb.textContent = "🌫️ Ambiente";
+
+    const efx = document.createElement("button");
+    efx.className = "btn";
+    efx.type = "button";
+    efx.textContent = "⚡ Efeito";
+
+    amb.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      removeFocus();
+      playAmbient(f.url, amb);
+    });
+
+    efx.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      removeFocus();
+      playEffect(f.url);
+    });
+
+    row.appendChild(title);
+    row.appendChild(amb);
+    row.appendChild(efx);
+    trackList.appendChild(row);
+  });
+}
+
+// -----------------------------------------------------
+// Player simples
+// -----------------------------------------------------
+function playAmbient(url, btn){
+  // se já tem um ambiente tocando nesse botão, para
+  const prev = btn._audio;
+  if (prev){
+    prev.pause();
+    btn._audio = null;
+    btn.textContent = "🌫️ Ambiente";
+    return;
+  }
+
+  // cria novo loop
+  const audio = new Audio(url);
+  audio.loop = true;
+  audio.volume = 0.55;
+
+  audio.play().catch(err => {
+    console.warn("Play bloqueado pelo browser:", err);
+    alert("O navegador bloqueou o play automático. Toque novamente no botão.");
+  });
+
+  btn._audio = audio;
+  btn.textContent = "⏹️ Parar";
+}
+
+function playEffect(url){
+  const audio = new Audio(url);
+  audio.volume = 0.85;
+  audio.play().catch(err => {
+    console.warn("Play bloqueado pelo browser:", err);
+    alert("O navegador bloqueou o play automático. Toque novamente no botão.");
+  });
+}
+
+// -----------------------------------------------------
+// Load
+// -----------------------------------------------------
 async function loadThemes(){
   const now = Date.now();
   if (CACHE.themes && (now - CACHE.ts < CACHE_TTL_MS)){
@@ -46,138 +211,54 @@ async function loadThemes(){
     return;
   }
 
-  try {
-    const folders = await fetchFromGitHub(AUDIO_ROOT);
+  try{
+    // lista pastas dentro de /audio
+    const root = await listGithubDir(AUDIO_ROOT);
 
-    THEMES = {};
+    const folders = root.filter(x => x.type === "dir");
+    const out = {};
 
-    for (let folder of folders){
-      if (folder.type !== "dir") continue;
+    for (const folder of folders){
+      const files = await listGithubDir(`${AUDIO_ROOT}/${folder.name}`);
 
-      const files = await fetchFromGitHub(`${AUDIO_ROOT}/${folder.name}`);
-      THEMES[folder.name] = files
-        .filter(f => f.type === "file" && f.name.endsWith(".mp3"))
+      out[folder.name] = files
+        .filter(f => f.type === "file" && /\.mp3$/i.test(f.name))
         .map(f => ({
-          name: f.name.replace(".mp3", ""),
+          name: f.name.replace(/\.mp3$/i, ""),
           url: f.download_url
-        }));
+        }))
+        .sort((a,b)=>a.name.localeCompare(b.name, "pt-BR"));
     }
 
-    CACHE = { ts: now, themes: THEMES };
+    THEMES = out;
+    CACHE = { ts: now, themes: out };
     renderThemes();
 
-  } catch (e){
-    console.error(e);
-    alert("Erro ao carregar temas do GitHub.");
+  }catch(err){
+    console.error(err);
+    alert(`Erro ao carregar temas do GitHub:\n${err.message}`);
   }
 }
 
-function renderThemes(){
-  const grid = $("themeGrid");
-  grid.innerHTML = "";
-
-  Object.keys(THEMES).forEach(folder => {
-    const card = document.createElement("div");
-    card.className = "theme-card";
-    card.innerText = folder;
-
-    card.onclick = () => openTheme(folder);
-
-    grid.appendChild(card);
-  });
-}
-
-function openTheme(folder){
-  currentTheme = folder;
-  $("themeTitle").innerText = folder;
-  $("modal").classList.remove("hidden");
-
-  const search = $("themeSearch");
-  search.value = "";
-
-  // 🔥 NÃO abrir teclado automaticamente no iPad
-  if (!isIOS()){
-    search.focus();
-  } else {
-    search.blur();
-  }
-
-  renderTrackList();
-}
-
-function closeModal(){
-  $("modal").classList.add("hidden");
-  removeFocus();
-}
-
-function renderTrackList(filter=""){
-  const list = $("trackList");
-  list.innerHTML = "";
-
-  const files = THEMES[currentTheme] || [];
-
-  files
-    .filter(f => f.name.toLowerCase().includes(filter.toLowerCase()))
-    .forEach(f => {
-
-      const row = document.createElement("div");
-      row.className = "track";
-
-      const title = document.createElement("div");
-      title.innerText = f.name;
-
-      const amb = document.createElement("button");
-      amb.innerText = "🌫️ Ambiente";
-
-      amb.onclick = () => {
-        removeFocus();
-        playAmbient(f.url, amb);
-      };
-
-      const efx = document.createElement("button");
-      efx.innerText = "⚡ Efeito";
-
-      efx.onclick = () => {
-        removeFocus();
-        playEffect(f.url);
-      };
-
-      row.appendChild(title);
-      row.appendChild(amb);
-      row.appendChild(efx);
-
-      list.appendChild(row);
-    });
-}
-
-function playAmbient(url, btn){
-  const audio = new Audio(url);
-  audio.loop = true;
-  audio.volume = 0.5;
-  audio.play();
-
-  btn.innerText = "⏹️ Parar";
-
-  btn.onclick = () => {
-    audio.pause();
-    btn.innerText = "🌫️ Ambiente";
-    btn.onclick = () => {
-      removeFocus();
-      playAmbient(url, btn);
-    };
-  };
-}
-
-function playEffect(url){
-  const audio = new Audio(url);
-  audio.volume = 0.8;
-  audio.play();
-}
-
+// -----------------------------------------------------
+// Eventos
+// -----------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
   loadThemes();
 
-  $("themeSearch").addEventListener("input", (e) => {
+  themeSearch?.addEventListener("input", (e) => {
     renderTrackList(e.target.value);
   });
+
+  closeBtn?.addEventListener("click", closeModal);
+
+  // fechar modal clicando fora
+  modal?.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  // iOS: se tocar fora de input, remove foco (fecha teclado)
+  document.addEventListener("touchstart", (e) => {
+    if (!e.target.matches("input, textarea")) removeFocus();
+  }, { passive: true });
 });
