@@ -1,11 +1,30 @@
-// Jogatina Soundboard — FULL UI (sem GitHub API, usa playlist.json)
-
+// Jogatina Soundboard — FULL UI + Volume por faixa (sem GitHub API, usa playlist.json)
 const PLAYLIST_URL = "playlist.json";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 let CACHE = { ts: 0, themes: null };
 let THEMES = {};              // { themeName: [items...] }
 let currentTheme = null;
+
+// Mix (volumes individuais)
+const MIX_KEY = "jogatina_mix_v1"; // { [url]: 0..1 }
+let MIX = {};
+
+function loadMix(){
+  try{ MIX = JSON.parse(localStorage.getItem(MIX_KEY) || "{}") || {}; }
+  catch(_){ MIX = {}; }
+}
+function saveMix(){
+  try{ localStorage.setItem(MIX_KEY, JSON.stringify(MIX)); }catch(_){}
+}
+function getTrackMix(url){
+  const v = MIX[url];
+  return (typeof v === "number" && isFinite(v)) ? Math.max(0, Math.min(1, v)) : 0.8;
+}
+function setTrackMix(url, v){
+  MIX[url] = Math.max(0, Math.min(1, v));
+  saveMix();
+}
 
 // DOM
 const themeGrid   = document.getElementById("themeGrid");
@@ -37,7 +56,6 @@ function setPill(ok, text){
 
 // ---------------- Audio unlock ----------------
 let AUDIO_UNLOCKED = false;
-
 function unlockAudio(){
   if (AUDIO_UNLOCKED) return;
 
@@ -64,8 +82,10 @@ function unlockAudio(){
 
   AUDIO_UNLOCKED = true;
 }
+document.addEventListener("pointerdown", unlockAudio, { passive:true });
+document.addEventListener("touchstart", unlockAudio, { passive:true });
 
-// ---------------- Volumes ----------------
+// ---------------- Volumes globais ----------------
 function getVolAmbient(){
   const el = document.getElementById("volAmbient");
   const v = el ? Number(el.value) : 0.6;
@@ -76,11 +96,13 @@ function getVolEffects(){
   const v = el ? Number(el.value) : 0.85;
   return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.85;
 }
+function finalAmbientVolume(url){ return getVolAmbient() * getTrackMix(url); }
+function finalEffectVolume(url){ return getVolEffects() * getTrackMix(url); }
 
 // ---------------- Multi-ambient layers ----------------
-let ambientLayers = []; // [{url, audio, btn, title}]
+let ambientLayers = []; // [{urlAbs, urlKey, audio, btn, title}]
 
-function findLayer(url){ return ambientLayers.find(l=>l.url===url) || null; }
+function findLayer(urlAbs){ return ambientLayers.find(l=>l.urlAbs===urlAbs) || null; }
 
 function stopLayer(layer){
   try{ layer.audio.pause(); layer.audio.currentTime = 0; }catch(_){}
@@ -89,8 +111,9 @@ function stopLayer(layer){
 }
 
 function syncAmbientVolumes(){
-  const v = getVolAmbient();
-  ambientLayers.forEach(l=>{ try{ l.audio.volume = v; }catch(_){ } });
+  ambientLayers.forEach(l=>{
+    try{ l.audio.volume = finalAmbientVolume(l.urlKey); }catch(_){}
+  });
 }
 
 function stopAmbient(){
@@ -106,39 +129,37 @@ function stopEffects(){
   setPill(null, "Efeitos ok.");
 }
 
-function playAmbient(url, btn, title=""){
+function playAmbient(urlKey, urlAbs, btn, title=""){
   unlockAudio();
 
-  const absUrl = new URL(url, window.location.href).href;
-  const existing = findLayer(absUrl);
+  const existing = findLayer(urlAbs);
   if (existing){
     stopLayer(existing);
-    setPill(true, ambientLayers.length ? `Ambientes tocando: ${ambientLayers.length} ✅` : "Ambiente parado ✅");
+    setPill(true, ambientLayers.length ? `Ambientes: ${ambientLayers.length} ✅` : "Ambiente parado ✅");
     return;
   }
 
-  const a = new Audio(absUrl);
+  const a = new Audio(urlAbs);
   a.loop = true;
-  a.volume = getVolAmbient();
+  a.volume = finalAmbientVolume(urlKey);
 
-  const layer = { url: absUrl, audio: a, btn, title };
+  const layer = { urlAbs, urlKey, audio: a, btn, title };
   ambientLayers.push(layer);
 
   btn?.classList.add("now");
 
   a.play().then(()=>{
-    setPill(true, `Ambientes tocando: ${ambientLayers.length} ✅`);
+    setPill(true, `Ambientes: ${ambientLayers.length} ✅`);
   }).catch(()=>{
     stopLayer(layer);
     setPill(false, "Bloqueado pelo navegador. Toque novamente.");
   });
 }
 
-function playEffect(url){
+function playEffect(urlKey, urlAbs){
   unlockAudio();
-  const absUrl = new URL(url, window.location.href).href;
-  const a = new Audio(absUrl);
-  a.volume = getVolEffects();
+  const a = new Audio(urlAbs);
+  a.volume = finalEffectVolume(urlKey);
   a.play().catch(()=>{
     setPill(false, "Bloqueado pelo navegador. Toque novamente.");
   });
@@ -174,7 +195,7 @@ function renderSceneSelect(){
 
 function snapshotCurrentScene(){
   return {
-    ambients: ambientLayers.map(l => ({ url: l.url, title: l.title || "" })),
+    ambients: ambientLayers.map(l => ({ urlKey: l.urlKey, urlAbs: l.urlAbs, title: l.title || "" })),
     volAmbient: getVolAmbient(),
     volEffects: getVolEffects()
   };
@@ -192,10 +213,10 @@ function applySceneByName(name){
   stopAmbient();
 
   (sc.ambients || []).forEach(item=>{
-    const a = new Audio(item.url);
+    const a = new Audio(item.urlAbs);
     a.loop = true;
-    a.volume = getVolAmbient();
-    const layer = { url: item.url, audio: a, btn: null, title: item.title || "" };
+    a.volume = finalAmbientVolume(item.urlKey);
+    const layer = { urlAbs: item.urlAbs, urlKey: item.urlKey, audio: a, btn: null, title: item.title || "" };
     ambientLayers.push(layer);
     a.play().catch(()=>{ stopLayer(layer); });
   });
@@ -371,7 +392,6 @@ function openTheme(name){
   modal.setAttribute("aria-hidden","false");
 
   themeSearch.value = "";
-  // iPad: não focar automaticamente (evita teclado)
   if (!isIOS()) themeSearch.focus();
   else themeSearch.blur();
 
@@ -410,6 +430,7 @@ function renderTrackList(filter){
     left.innerHTML = `<div class="track-title">${it.title}</div>
                       <div class="tagline">${it.type === "effect" ? "⚡ efeito (1x)" : "🌫️ ambiente (loop)"} • ${it.url}</div>`;
 
+    // buttons
     const amb = document.createElement("button");
     amb.className = "btn";
     amb.textContent = "🌫️ Ambiente";
@@ -422,33 +443,68 @@ function renderTrackList(filter){
     efx.className = "btn";
     efx.textContent = "⚡ Efeito";
 
+    // mix row (always visible)
+    const mixWrap = document.createElement("div");
+    mixWrap.className = "mix";
+    mixWrap.innerHTML = `<label>🎚️ Volume</label>`;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "1";
+    slider.step = "0.01";
+
+    const urlKey = it.url; // key for localStorage mix (relative)
+    slider.value = String(getTrackMix(urlKey));
+
+    const val = document.createElement("span");
+    val.className = "val";
+    val.textContent = Math.round(Number(slider.value)*100) + "%";
+
+    slider.addEventListener("input", ()=>{
+      val.textContent = Math.round(Number(slider.value)*100) + "%";
+      setTrackMix(urlKey, Number(slider.value));
+      // live update if this track is playing as ambient
+      const abs = new URL(urlKey, window.location.href).href;
+      const layer = findLayer(abs);
+      if (layer){
+        try{ layer.audio.volume = finalAmbientVolume(layer.urlKey); }catch(_){}
+      }
+    });
+
+    mixWrap.appendChild(slider);
+    mixWrap.appendChild(val);
+
+    // click handlers
     amb.addEventListener("click", (e)=>{
       e.preventDefault(); e.stopPropagation();
       blurActive();
-      if (!it.url) return;
-      playAmbient(it.url, amb, it.title);
+      const urlAbs = new URL(urlKey, window.location.href).href;
+      playAmbient(urlKey, urlAbs, amb, it.title);
     });
 
     efx.addEventListener("click", (e)=>{
       e.preventDefault(); e.stopPropagation();
       blurActive();
-      if (!it.url) return;
-      playEffect(it.url);
+      const urlAbs = new URL(urlKey, window.location.href).href;
+      playEffect(urlKey, urlAbs);
     });
 
-    row.appendChild(left);
+    // compose: left cell becomes left+mix under it
+    const leftWrap = document.createElement("div");
+    leftWrap.appendChild(left);
+    leftWrap.appendChild(mixWrap);
+
+    row.appendChild(leftWrap);
     row.appendChild(amb);
     row.appendChild(efx);
     trackList.appendChild(row);
   });
 }
 
-// ---------------- Generator buttons etc ----------------
+// ---------------- Wire up ----------------
 document.addEventListener("DOMContentLoaded", ()=>{
-  // unlock on first interaction
-  document.addEventListener("pointerdown", unlockAudio, { passive:true });
-  document.addEventListener("touchstart", unlockAudio, { passive:true });
-
+  loadMix();
   loadThemes();
   loadScenes();
 
@@ -464,9 +520,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   themeSearch?.addEventListener("input", (e)=>renderTrackList(e.target.value));
 
-  // volumes
   document.getElementById("volAmbient")?.addEventListener("input", syncAmbientVolumes);
-
   document.getElementById("stopAmbient")?.addEventListener("click", stopAmbient);
   document.getElementById("stopEffects")?.addEventListener("click", stopEffects);
 
