@@ -1,10 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-
-echo Gerando playlist.json a partir das pastas em .\audio\...
+echo Gerando playlist.json a partir de .\audio\* (sem Python)...
 echo.
-
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0generate_playlist.ps1"
 if %errorlevel% neq 0 (
   echo.
@@ -12,7 +10,6 @@ if %errorlevel% neq 0 (
   pause
   exit /b 1
 )
-
 echo.
-echo OK. Agora abra o GitHub Desktop e faca Commit + Push.
+echo OK. Agora faca Commit + Push no GitHub Desktop.
 pause

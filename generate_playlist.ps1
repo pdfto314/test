@@ -9,10 +9,7 @@ if (!(Test-Path $audioDir)) {
   exit 1
 }
 
-Add-Type -AssemblyName System.Web
-
 function UrlEncodePart([string]$s){
-  # Encode accents/spaces safely
   return [System.Uri]::EscapeDataString($s)
 }
 
@@ -44,7 +41,6 @@ Get-ChildItem -Path $audioDir -Directory | Sort-Object Name | ForEach-Object {
 }
 
 $data = [PSCustomObject]@{ categories = $categories }
-
 $json = $data | ConvertTo-Json -Depth 6
 [System.IO.File]::WriteAllText($outFile, $json, (New-Object System.Text.UTF8Encoding($false)))
 

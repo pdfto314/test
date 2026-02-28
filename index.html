@@ -4,27 +4,104 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jogatina Soundboard</title>
-  <link rel="stylesheet" href="style.css?v=1" />
+  <link rel="stylesheet" href="style.css?v=202" />
 </head>
 <body>
-  <header class="top">
-    <h1>Jogatina Soundboard</h1>
-    <div class="hint">1) Toque/click uma vez na página para liberar áudio. 2) Depois clique nos botões.</div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🎛️</div>
+      <div class="titles">
+        <div class="h1">Jogatina Soundboard</div>
+        <div class="sub">Ambientes + efeitos • iPad friendly • sem GitHub API</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="pill">
+        <span id="audioDot" class="dot"></span>
+        <span id="audioText">Pronto.</span>
+      </div>
+
+      <div class="vol">
+        <label>🌫️ Ambiente</label>
+        <input id="volAmbient" type="range" min="0" max="1" step="0.01" value="0.6" />
+      </div>
+
+      <div class="vol">
+        <label>⚡ Efeito</label>
+        <input id="volEffects" type="range" min="0" max="1" step="0.01" value="0.85" />
+      </div>
+
+      <button class="btn ghost" id="stopAmbient">⏹️ Parar Ambiente</button>
+      <button class="btn ghost" id="stopEffects">🧹 Limpar Efeitos</button>
+    </div>
   </header>
 
-  <main>
-    <div class="bar">
-      <button id="reload" class="btn">Recarregar lista</button>
-      <span id="status" class="status">Carregando…</span>
-    </div>
+  <main class="wrap">
+    <section class="card">
+      <div class="card-title">🎭 Temas</div>
+      <div class="card-sub">Clique em um tema para abrir a lista de áudios. (Toque na tela 1x para liberar som.)</div>
 
-    <div id="themes" class="themes"></div>
+      <div class="row">
+        <input id="themeFilter" class="input" placeholder="Filtrar temas…" />
+        <button class="btn" id="reloadBtn">🔄 Recarregar</button>
+      </div>
 
-    <div class="footer">
-      <div><b>Dica:</b> para atualizar automaticamente os temas, rode <code>generate_playlist.bat</code> no Windows e faça commit + push.</div>
-    </div>
+      <div id="themeGrid" class="grid"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-title">🧩 Sets (cenas)</div>
+      <div class="card-sub">Salve uma combinação de ambientes tocando (camadas) e aplique com 1 clique.</div>
+
+      <div class="row">
+        <select id="sceneSelect" class="select"></select>
+        <button class="btn" id="applyScene">▶️ Aplicar</button>
+        <button class="btn" id="saveScene">💾 Salvar Set</button>
+        <button class="btn ghost" id="deleteScene">🗑️ Excluir</button>
+      </div>
+
+      <div class="small">
+        Dica: arquivos novos? Rode <code>generate_playlist.bat</code> no Windows (sem Python) e depois Commit + Push.
+      </div>
+    </section>
   </main>
 
-  <script src="app.js?v=1"></script>
+  <!-- Modal tema -->
+  <div class="modal hidden" id="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div id="themeTitle" class="modal-title">Tema</div>
+          <div class="modal-sub">🌫️ Ambiente = liga/desliga (camadas). ⚡ Efeito = toca 1x.</div>
+        </div>
+        <button class="btn ghost" id="closeBtn">✖</button>
+      </div>
+
+      <div class="row">
+        <input id="themeSearch" class="input" placeholder="Pesquisar áudio…" />
+      </div>
+
+      <div id="trackList" class="tracks"></div>
+    </div>
+  </div>
+
+  <!-- Modal salvar set -->
+  <div class="modal hidden" id="sceneNameModal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-title">Salvar Set</div>
+      <div class="modal-sub">Dê um nome para este set (combinação de ambientes tocando).</div>
+
+      <div class="row">
+        <input id="sceneNameInput" class="input" type="text" placeholder="Ex: Chuva + Mar" maxlength="40" />
+        <button class="btn" id="sceneNameConfirm">Salvar</button>
+        <button class="btn ghost" id="sceneNameCancel">Cancelar</button>
+      </div>
+
+      <div class="small" id="sceneNameHint"></div>
+    </div>
+  </div>
+
+  <script src="app.js?v=202"></script>
 </body>
 </html>
