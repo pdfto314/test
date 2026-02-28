@@ -309,6 +309,11 @@ function openTheme(folder){
   const emojiEl = $("modalEmoji");
   const themeSearch = $("themeSearch");
 
+  function isIOS(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
   if (!modal || !title || !sub || !emojiEl) return;
 
   title.textContent = folder;
@@ -550,4 +555,5 @@ window.addEventListener("DOMContentLoaded", ()=>{
     setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
   });
 });
+
 
