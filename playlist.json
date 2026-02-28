@@ -1,0 +1,30 @@
+{
+  "categories": [
+    {
+      "name": "Vila",
+      "items": [
+        {
+          "title": "Vila Medieval",
+          "type": "ambience",
+          "url": "audio/vila.mp3",
+          "loop": true,
+          "volume": 0.8,
+          "tags": ["vila"]
+        }
+      ]
+    },
+    {
+      "name": "Floresta",
+      "items": [
+        {
+          "title": "Floresta Noturna",
+          "type": "ambience",
+          "url": "audio/floresta.mp3",
+          "loop": true,
+          "volume": 0.8,
+          "tags": ["floresta"]
+        }
+      ]
+    }
+  ]
+}
