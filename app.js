@@ -294,68 +294,7 @@ function renderThemeGrid(filterText=""){
   }
 }
 
-function ensureModal(){
-  // Se o HTML não tiver o modal (algumas versões antigas), cria dinamicamente.
-  let modal = document.getElementById("modal");
-  if (modal) return modal;
-
-  modal = document.createElement("div");
-  modal.className = "modal hidden";
-  modal.id = "modal";
-  modal.setAttribute("role","dialog");
-  modal.setAttribute("aria-modal","true");
-
-  modal.innerHTML = `
-    <div class="modal-card">
-      <div class="modal-head">
-        <button class="btn ghost" id="modalBack">← Voltar</button>
-
-        <div class="modal-title-wrap">
-          <div class="modal-title">
-            <span class="modal-emoji" id="modalEmoji">🎧</span>
-            <span id="modalTitle">Tema</span>
-          </div>
-          <div class="modal-sub" id="modalSub">0 áudios</div>
-        </div>
-
-        <div class="modal-actions">
-          <input id="themeSearch" type="search" placeholder="Buscar dentro do tema…" />
-        </div>
-      </div>
-
-      <div class="modal-body" id="trackList"></div>
-    </div>
-  `;
-  document.body.appendChild(modal);
-
-  // wire básico
-  const back = document.getElementById("modalBack");
-  if (back) back.addEventListener("click", closeTheme);
-
-  // fechar clicando fora
-  modal.addEventListener("click", (e)=>{
-    if (e.target === modal) closeTheme();
-  });
-
-  // ESC fecha
-  document.addEventListener("keydown", (e)=>{
-    if (e.key === "Escape") closeTheme();
-  });
-
-  // buscar dentro do tema (sem focar automaticamente, pra não abrir teclado no iPad)
-  const search = document.getElementById("themeSearch");
-  if (search){
-    search.addEventListener("input", ()=>{
-      if (!currentTheme) return;
-      renderTrackList(currentTheme, search.value || "");
-    });
-  }
-
-  return modal;
-}
-
 function openTheme(folder){
-  ensureModal();
   currentTheme = folder;
   const modal = $("modal");
   const title = $("modalTitle");
@@ -372,7 +311,7 @@ function openTheme(folder){
   modal.classList.remove("hidden");
   if (themeSearch){
     themeSearch.value = "";
-    // (não focar automaticamente no iPad)
+    // sem auto-focus (iPad)
 }
 
   renderTrackList(folder, "");
@@ -606,7 +545,6 @@ window.addEventListener("DOMContentLoaded", ()=>{
 });
 
 
-/* noselect patch */
 (function(){
   const styleId = "sb-noselect-style";
   if (document.getElementById(styleId)) return;

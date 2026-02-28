@@ -2,12 +2,9 @@
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 
-REM ============================================
-REM generate_playlist.bat (sem Python)
-REM - Varre recursivamente .\audio\
-REM - Agrupa por pasta de 1o nível (tema)
-REM - Gera playlist.json no formato do soundboard
-REM ============================================
+REM generate_playlist.bat (recursivo, sem Python)
+REM - Varre .\audio\* recursivamente
+REM - Cria/atualiza playlist.json
 
 if not exist "audio\" (
   echo ERRO: pasta "audio\" nao existe.
@@ -16,22 +13,16 @@ if not exist "audio\" (
 )
 
 set "OUT=playlist.json"
-set "TMP=%TEMP%\sb_playlist_%RANDOM%.tmp"
-if exist "%TMP%" del "%TMP%" >nul 2>&1
 
-REM Inicia JSON
 > "%OUT%" echo {
-
-REM Vamos montar objetos por tema
 set "FIRST_THEME=1"
 
 for /d %%T in ("audio\*") do (
   set "THEME=%%~nxT"
-  REM Conta mp3 recursivo dentro do tema
+
   set "COUNT=0"
-  for /r "%%T" %%F in (*.mp3) do (
-    set /a COUNT+=1
-  )
+  for /r "%%T" %%F in (*.mp3) do set /a COUNT+=1
+
   if !COUNT! gtr 0 (
     if "!FIRST_THEME!"=="1" (
       set "FIRST_THEME=0"
@@ -48,11 +39,7 @@ for /d %%T in ("audio\*") do (
     for /r "%%T" %%F in (*.mp3) do (
       set "REL=%%F"
       set "REL=!REL:%CD%\=!"
-
-      REM Normaliza para URL com /
       set "URL=!REL:\=/!"
-
-      REM Titulo (arquivo sem extensão)
       set "TITLE=%%~nF"
 
       if "!FIRST_ITEM!"=="1" (
