@@ -323,8 +323,9 @@ function openTheme(folder){
   modal.classList.remove("hidden");
   if (themeSearch){
     themeSearch.value = "";
-    themeSearch.focus();
-  }
+    if (!isIOS()){
+  themeSearch.focus();
+}
 
   renderTrackList(folder, "");
 }
@@ -555,5 +556,6 @@ window.addEventListener("DOMContentLoaded", ()=>{
     setStatus("Erro ao listar áudios automaticamente. Verifique se /audio existe e se BRANCH está correto.");
   });
 });
+
 
 
