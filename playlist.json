@@ -1,8 +1,93 @@
 {
     "categories":  [
                        {
+                           "name":  "Batalha",
+                           "items":  [
+                                         {
+                                             "title":  "Custom ambient sword battle",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/Custom_ambient_sword_battle.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "custom leo heavy sword swing reverse doppler ringouts sounds FINAL 12112024",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/custom_leo_heavy_sword_swing_reverse_doppler_ringouts_sounds_FINAL_12112024.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Custom sword hits demonslayer inspired 06152023 final w rattle",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/Custom_sword_hits_demonslayer_inspired_06152023_final_w_rattle.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "metal coffee cup clangs.flac",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/metal%20coffee%20cup%20clangs.flac.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Mongolian film windblown steppe1.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/Mongolian%20film%20windblown%20steppe1.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "shovel hit spade mimicking sword clashing sounds",
+                                             "type":  "ambience",
+                                             "url":  "audio/Batalha/shovel_hit_spade_mimicking_sword_clashing_sounds.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "batalha"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
                            "name":  "Chuva",
                            "items":  [
+                                         {
+                                             "title":  "2014-06-16 thunderstorm at bruneau dunes.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/2014-06-16%20thunderstorm%20at%20bruneau%20dunes.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Amb Forest Thunder Rain Night KA",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/Amb_Forest_Thunder_Rain_Night_KA.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
                                          {
                                              "title":  "amb forest thunder rain night ka 728687",
                                              "type":  "ambience",
@@ -14,9 +99,29 @@
                                                       ]
                                          },
                                          {
+                                             "title":  "Glitter",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/Glitter.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
                                              "title":  "heavy rain and hail on window during light thunderstorm 689960",
                                              "type":  "ambience",
                                              "url":  "audio/Chuva/heavy_rain_and_hail_on_window_during_light_thunderstorm_689960.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Rain and Thunder Ambience TÃ¼bingen",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/Rain%20and%20Thunder%20Ambience%20T%C3%83%C2%BCbingen.mp3",
                                              "loop":  true,
                                              "volume":  0.8,
                                              "tags":  [
@@ -44,9 +149,29 @@
                                                       ]
                                          },
                                          {
+                                             "title":  "RAIN Eaves Drops.Melted Snow.Rain.Autumn.City Yard 5 EM",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/RAIN_Eaves%20Drops.Melted%20Snow.Rain.Autumn.City%20Yard%205_EM.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
                                              "title":  "rainy night with thunder and water droppingwav 399682",
                                              "type":  "ambience",
                                              "url":  "audio/Chuva/rainy_night_with_thunder_and_water_droppingwav_399682.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "chuva"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ripples 1.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Chuva/Ripples%201.wav.mp3",
                                              "loop":  true,
                                              "volume":  0.8,
                                              "tags":  [
@@ -126,8 +251,128 @@
                                      ]
                        },
                        {
+                           "name":  "Cultista",
+                           "items":  [
+                                         {
+                                             "title":  "Chapel of sacrifice",
+                                             "type":  "ambience",
+                                             "url":  "audio/Cultista/Chapel%20of%20sacrifice.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "cultista"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Defensible Twister",
+                                             "type":  "ambience",
+                                             "url":  "audio/Cultista/Defensible%20Twister.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "cultista"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Satanic tribe",
+                                             "type":  "ambience",
+                                             "url":  "audio/Cultista/Satanic%20tribe.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "cultista"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Dragao",
+                           "items":  [
+                                         {
+                                             "title":  "Anji Insect Chorus.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/Anji%20Insect%20Chorus.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Dragon roaring sound effect",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/Dragon%20roaring%20sound%20effect.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Freaky Wailing",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/Freaky%20Wailing.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "monster bites FINAL 06192025",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/monster_bites_FINAL_06192025.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "remix of 168947  audiorichter  monster.flac",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/remix%20of%20168947__audiorichter__monster.flac.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "smok przyciÄty.WAV",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dragao/smok%20przyci%C3%84%C2%99ty.WAV.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dragao"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
                            "name":  "Dungeon",
                            "items":  [
+                                         {
+                                             "title":  "AMBDsgn Creepy Troll cave.Drops.Rumble.Bats.Sticky worms.Monk whispers EM",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/AMBDsgn_Creepy%20Troll%20cave.Drops.Rumble.Bats.Sticky%20worms.Monk%20whispers_EM.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "AMBDsgn Madness Prison.Ambience.Laughter.Screams.Footsteps.Cell Doors.Ceiling Leak.A Faulty Lamp.Electric Hum 1 EM",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/AMBDsgn_Madness%20Prison.Ambience.Laughter.Screams.Footsteps.Cell%20Doors.Ceiling%20Leak.A%20Faulty%20Lamp.Electric%20Hum%201_EM.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         },
                                          {
                                              "title":  "dark dungeon ambience 516566",
                                              "type":  "ambience",
@@ -137,12 +382,127 @@
                                              "tags":  [
                                                           "dungeon"
                                                       ]
+                                         },
+                                         {
+                                             "title":  "Dungeon Ambiance",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/Dungeon%20Ambiance.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Horror Atmosphere 7 The Lair Loop",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/Horror%20Atmosphere%207_The%20Lair_Loop.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Magic - Unpleasant Tonal Ambience",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/Magic%20-%20Unpleasant%20Tonal%20Ambience.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Noedell - Royalty FREE Horror halloween Ambience",
+                                             "type":  "ambience",
+                                             "url":  "audio/Dungeon/Noedell%20-%20Royalty%20FREE%20Horror_halloween%20Ambience.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "dungeon"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Emboscada",
+                           "items":  [
+                                         {
+                                             "title":  "city-canal ambiance Verwersstroom Waterstraat s-Hertogenbosch Netherlands 1218 pm 251001 0044",
+                                             "type":  "ambience",
+                                             "url":  "audio/Emboscada/city-canal%20ambiance%20Verwersstroom%20Waterstraat%20s-Hertogenbosch%20Netherlands%201218%20pm%20251001_0044.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "emboscada"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Distant Wind Chimes - Bamboo, Pluto, Gypsy Mezzo \u0026 Soprano - and birds - Hunter\u0027s Path, Teign Gorge (position 1) - excer",
+                                             "type":  "ambience",
+                                             "url":  "audio/Emboscada/Distant%20Wind%20Chimes%20-%20Bamboo%2C%20Pluto%2C%20Gypsy%20Mezzo%20%26%20Soprano%20-%20and%20birds%20-%20Hunter\u0027s%20Path%2C%20Teign%20Gorge%20(position%201)%20-%20excer.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "emboscada"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Skoke - Magic forest.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Emboscada/Skoke%20-%20Magic%20forest.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "emboscada"
+                                                      ]
                                          }
                                      ]
                        },
                        {
                            "name":  "Floresta",
                            "items":  [
+                                         {
+                                             "title":  "Amb Forest Thunder Rain Night KA",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/Amb_Forest_Thunder_Rain_Night_KA.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ambience  Forest Lake at Night",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/Ambience_%20Forest%20Lake%20at%20Night.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Disturbance (racing cars) during evening birds recording on Dartmoor",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/Disturbance%20(racing%20cars)%20during%20evening%20birds%20recording%20on%20Dartmoor.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "evening woods 01 NL 151009 0806.flac",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/evening%20woods%2001%20NL%20151009_0806.flac.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
                                          {
                                              "title":  "forest birds wind dark haunted outdoor eerie atmo atmosphere cinematicwav 617747",
                                              "type":  "ambience",
@@ -157,6 +517,26 @@
                                              "title":  "forest night ambience stereo 48khz 24bit 220 owi 708611",
                                              "type":  "ambience",
                                              "url":  "audio/Floresta/forest_night_ambience_stereo_48khz_24bit_220_owi_708611.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Frog Forest",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/Frog%20Forest.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "floresta"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "night on the river.WAV",
+                                             "type":  "ambience",
+                                             "url":  "audio/Floresta/night_on_the_river.WAV.mp3",
                                              "loop":  true,
                                              "volume":  0.8,
                                              "tags":  [
@@ -196,8 +576,63 @@
                                      ]
                        },
                        {
+                           "name":  "Goblin",
+                           "items":  [
+                                         {
+                                             "title":  "Pug Dog Grunts, Breaths, Snarls",
+                                             "type":  "ambience",
+                                             "url":  "audio/Goblin/Pug%20Dog%20Grunts%2C%20Breaths%2C%20Snarls.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "goblin"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "terrifying scream.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Goblin/terrifying%20scream.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "goblin"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
                            "name":  "Mar",
                            "items":  [
+                                         {
+                                             "title":  "250730 061119 PH Ocean waves at White Beach",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/250730_061119_PH_Ocean_waves_at_White_Beach.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "250815 034144 PH Calm sea at night",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/250815_034144_PH_Calm_sea_at_night.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Crashing Waves - Pacific Ocean",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/Crashing%20Waves%20-%20Pacific%20Ocean.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         },
                                          {
                                              "title":  "Dentro Navio ou Vilarejo perto de port",
                                              "type":  "ambience",
@@ -206,6 +641,166 @@
                                              "volume":  0.8,
                                              "tags":  [
                                                           "mar"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ocean Ambiance Night",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/Ocean%20Ambiance%20Night.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ocean Waves Crashing on the Coast of Big Lagoon, Redwoods",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/Ocean%20Waves%20Crashing%20on%20the%20Coast%20of%20Big%20Lagoon%2C%20Redwoods.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Waves.wav(es)",
+                                             "type":  "ambience",
+                                             "url":  "audio/Mar/Waves.wav(es).mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "mar"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Morto_vivo",
+                           "items":  [
+                                         {
+                                             "title":  "Classic Zombie moans and attack by Bernuy CC BY",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Classic%20Zombie%20moans%20and%20attack%20by%20Bernuy%20CC%20BY.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Zombie 02.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Zombie%2002.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Zombie 03.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Zombie%2003.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Zombie 05.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Zombie%2005.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Zombie 07.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Zombie%2007.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Zombie Sounds Effects (No Reverb).wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Morto_vivo/Zombie%20Sounds%20Effects%20(No%20Reverb).wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "morto_vivo"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Ritual",
+                           "items":  [
+                                         {
+                                             "title":  "Ambience Hell 00.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Ambience_Hell_00.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ambience Hell 01.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Ambience_Hell_01.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ambience Hell 02.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Ambience_Hell_02.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Forest Angel Ritual Dark Atmo.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Forest%20Angel%20Ritual%20Dark%20Atmo.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Old ritual - Fantasy Background Soundscape Haunted Atmo Music Synth Drum Orchestra - Mastered.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Old%20ritual%20-%20Fantasy%20Background%20Soundscape%20Haunted%20Atmo%20Music%20Synth%20Drum%20Orchestra%20-%20Mastered.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Sacrilege",
+                                             "type":  "ambience",
+                                             "url":  "audio/Ritual/Sacrilege.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "ritual"
                                                       ]
                                          }
                                      ]
@@ -234,6 +829,16 @@
                                                       ]
                                          },
                                          {
+                                             "title":  "Doomed Drone",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/Doomed%20Drone.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
                                              "title":  "doomed drone 786902",
                                              "type":  "ambience",
                                              "url":  "audio/Tens%C3%A3o/doomed_drone_786902.mp3",
@@ -247,6 +852,16 @@
                                              "title":  "drone 15122015 332246",
                                              "type":  "ambience",
                                              "url":  "audio/Tens%C3%A3o/drone_15122015_332246.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "DSGNDron Atonal Mysterious Atmosphere 6 EM.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/DSGNDron_Atonal%20Mysterious%20Atmosphere%206_EM.wav.mp3",
                                              "loop":  true,
                                              "volume":  0.8,
                                              "tags":  [
@@ -324,6 +939,26 @@
                                                       ]
                                          },
                                          {
+                                             "title":  "DSGNDron Eerie Mysterious Breathing Ambience 1 EM.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/DSGNDron_Eerie%20Mysterious%20Breathing%20Ambience%201_EM.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Enchanted cave",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/Enchanted%20cave.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
                                              "title":  "journey to the interweb 609250",
                                              "type":  "ambience",
                                              "url":  "audio/Tens%C3%A3o/journey_to_the_interweb_609250.mp3",
@@ -331,6 +966,91 @@
                                              "volume":  0.8,
                                              "tags":  [
                                                           "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Ominous Horror Soundtrack",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/Ominous%20Horror%20Soundtrack.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Transition to the forge",
+                                             "type":  "ambience",
+                                             "url":  "audio/Tens%C3%A3o/Transition%20to%20the%20forge.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "tensão"
+                                                      ]
+                                         }
+                                     ]
+                       },
+                       {
+                           "name":  "Warg",
+                           "items":  [
+                                         {
+                                             "title":  "bark",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/bark.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Dog howling from another room - Howls",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/Dog%20howling%20from%20another%20room%20-%20Howls.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Dragon Lines (Many)",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/Dragon%20Lines%20(Many).mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Igor- I wan\u0027t dinner.wav",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/Igor-%20I%20wan\u0027t%20dinner.wav.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "Mars Gets Combed",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/Mars%20Gets%20Combed.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
+                                                      ]
+                                         },
+                                         {
+                                             "title":  "StormKloud Sled Dogs.aif",
+                                             "type":  "ambience",
+                                             "url":  "audio/Warg/StormKloud%20Sled%20Dogs.aif.mp3",
+                                             "loop":  true,
+                                             "volume":  0.8,
+                                             "tags":  [
+                                                          "warg"
                                                       ]
                                          }
                                      ]

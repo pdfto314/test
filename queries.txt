@@ -1,0 +1,15 @@
+# Heroes of the Borderlands - Lista Base
+goblin laugh -> criaturas\goblin
+goblin screech -> criaturas\goblin
+warg growl -> criaturas\warg
+wolf howl night -> criaturas\warg
+undead moan -> criaturas\morto_vivo
+skeleton rattle -> criaturas\morto_vivo
+cult chanting ritual -> criaturas\cultista
+dark ritual ambience -> cenas\ritual
+forest ambush -> cenas\emboscada
+dungeon drip water -> ambiente\dungeon
+dragon roar cinematic -> boss\dragao
+giant spider hiss -> criaturas\aranha
+battle sword clash -> cenas\batalha
+war cry medieval -> cenas\batalha

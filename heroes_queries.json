@@ -1,0 +1,124 @@
+{
+  "api_base": "https://freesound.org/apiv2",
+  "max_per_category": 6,
+  "min_duration": 20,
+  "max_duration": 900,
+  "license_filter": "",
+  "categories": [
+    {
+      "folder": "chuva",
+      "queries": [
+        "rain ambience",
+        "heavy rain ambience",
+        "thunderstorm rain ambience"
+      ]
+    },
+    {
+      "folder": "dungeon",
+      "queries": [
+        "dungeon ambience",
+        "cave drip ambience",
+        "chains dragging sound",
+        "stone door creak"
+      ]
+    },
+    {
+      "folder": "floresta",
+      "queries": [
+        "forest night ambience",
+        "dark woods ambience",
+        "wind in trees night"
+      ]
+    },
+    {
+      "folder": "mar",
+      "queries": [
+        "ocean waves ambience",
+        "sea storm ambience",
+        "harbor ambience night"
+      ]
+    },
+    {
+      "folder": "tensão",
+      "queries": [
+        "tension drone ambience",
+        "dark suspense ambience",
+        "horror stinger low"
+      ]
+    },
+    {
+      "folder": "goblin",
+      "queries": [
+        "goblin laugh",
+        "small monster screech",
+        "creature snarl small"
+      ]
+    },
+    {
+      "folder": "warg",
+      "queries": [
+        "wolf growl",
+        "warg growl",
+        "beast snarl",
+        "wolf howl night"
+      ]
+    },
+    {
+      "folder": "morto_vivo",
+      "queries": [
+        "zombie moan",
+        "undead groan",
+        "skeleton rattle",
+        "undead scream distant"
+      ]
+    },
+    {
+      "folder": "cultista",
+      "queries": [
+        "cult chanting ritual",
+        "dark ritual chant ambience",
+        "demonic whisper ambience"
+      ]
+    },
+    {
+      "folder": "aranha",
+      "queries": [
+        "giant spider hiss",
+        "insect creature hiss",
+        "cave creature skitter"
+      ]
+    },
+    {
+      "folder": "dragao",
+      "queries": [
+        "dragon roar",
+        "dragon wing flap",
+        "fire breath blast"
+      ]
+    },
+    {
+      "folder": "batalha",
+      "queries": [
+        "medieval battle ambience",
+        "sword clash",
+        "war cry medieval"
+      ]
+    },
+    {
+      "folder": "emboscada",
+      "queries": [
+        "forest ambush",
+        "branches breaking run",
+        "stealth footsteps forest"
+      ]
+    },
+    {
+      "folder": "ritual",
+      "queries": [
+        "dark ritual ambience",
+        "magic circle chant",
+        "occult ceremony ambience"
+      ]
+    }
+  ]
+}
