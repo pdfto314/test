@@ -377,6 +377,52 @@
                                  ]
                    },
                    {
+                       "name":  "Minotauro",
+                       "count":  8,
+                       "items":  [
+                                     {
+                                         "title":  "A espreita",
+                                         "file":  "A espreita.mp3",
+                                         "url":  "audio/Minotauro/A espreita.mp3"
+                                     },
+                                     {
+                                         "title":  "Bufando",
+                                         "file":  "Bufando.mp3",
+                                         "url":  "audio/Minotauro/Bufando.mp3"
+                                     },
+                                     {
+                                         "title":  "Cheirando",
+                                         "file":  "Cheirando.mp3",
+                                         "url":  "audio/Minotauro/Cheirando.mp3"
+                                     },
+                                     {
+                                         "title":  "Indagado",
+                                         "file":  "Indagado.mp3",
+                                         "url":  "audio/Minotauro/Indagado.mp3"
+                                     },
+                                     {
+                                         "title":  "Machucado FeridoGravimente",
+                                         "file":  "Machucado_FeridoGravimente.mp3",
+                                         "url":  "audio/Minotauro/Machucado_FeridoGravimente.mp3"
+                                     },
+                                     {
+                                         "title":  "Machucou",
+                                         "file":  "Machucou.mp3",
+                                         "url":  "audio/Minotauro/Machucou.mp3"
+                                     },
+                                     {
+                                         "title":  "Minotauro Ordem",
+                                         "file":  "Minotauro_Ordem.mp3",
+                                         "url":  "audio/Minotauro/Minotauro_Ordem.mp3"
+                                     },
+                                     {
+                                         "title":  "Raiva",
+                                         "file":  "Raiva.mp3",
+                                         "url":  "audio/Minotauro/Raiva.mp3"
+                                     }
+                                 ]
+                   },
+                   {
                        "name":  "Morto_vivo",
                        "count":  6,
                        "items":  [
@@ -581,5 +627,5 @@
                                  ]
                    }
                ],
-    "generated":  "2026-02-28T21:25:14"
+    "generated":  "2026-02-28T23:27:10"
 }
