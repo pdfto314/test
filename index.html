@@ -12,7 +12,7 @@
       <div class="logo">🎲</div>
       <div class="titles">
         <div class="h1">Jogatina Soundboard</div>
-        <div class="h2">Ambientes + efeitos • iPad friendly • auto-lista /audio via GitHub API</div>
+        <div class="h2">Ambientes + efeitos • iPad friendly • (preferência: playlist.json; fallback: GitHub API)</div>
       </div>
     </div>
 
@@ -41,7 +41,7 @@
   <main class="grid">
     <section class="card">
       <div class="cardTitle">🗂️ Temas</div>
-      <div class="cardSub">Clique em um tema para abrir a lista de áudios.</div>
+      <div class="cardSub">Carrega da <b>playlist.json</b> (evita rate limit). O botão “Recarregar” tenta GitHub API e salva cache.</div>
 
       <div class="row">
         <input id="themeFilter" class="input" placeholder="Filtrar temas..." />
@@ -88,10 +88,10 @@
       </div>
 
       <details class="details">
-        <summary>⚙️ Config (GitHub)</summary>
+        <summary>⚙️ Como atualizar a playlist</summary>
         <div class="mono small">
-          Edite <b>app.js</b> e ajuste: <code>OWNER</code>, <code>REPO</code>, <code>BRANCH</code>, <code>AUDIO_PATH</code>.<br/>
-          Estrutura: <code>audio/Tema/arquivos.mp3</code> (cada pasta vira um tema).
+          No Windows: rode <code>generate_playlist.bat</code> (gera <code>playlist.json</code>) e faça Commit+Push.<br/>
+          No iPad: só abre o link (não usa GitHub API por padrão).
         </div>
       </details>
     </section>

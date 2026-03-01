@@ -1,0 +1,15 @@
+Por que no iPad deu GitHub API 403?
+- O GitHub limita requisições "sem login" (rate limit). Em iPad/4G/operadora, você pode estar no mesmo IP de muita gente e estourar rápido.
+
+Solução (esta versão):
+- Carrega primeiro playlist.json (sem GitHub API) ✅
+- Botão "Recarregar" tenta GitHub API só quando você quiser (PC), e salva cache.
+
+Como atualizar quando adicionar/remover/renomear áudios:
+1) No Windows, rode: generate_playlist.bat
+2) Isso gera/atualiza playlist.json
+3) Commit + Push
+4) No iPad, só dar refresh no link.
+
+Observação:
+- URLs no playlist.json são relativas (audio/Tema/arquivo.mp3), então funciona direto no GitHub Pages.
