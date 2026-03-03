@@ -30,6 +30,7 @@ const els = {
   resetTrackVolBtn: document.getElementById("resetTrackVolBtn"),
   nowAmbients: document.getElementById("nowAmbients"),
   fxCount: document.getElementById("fxCount"),
+  nowPlayingList: document.getElementById("nowPlayingList"),
 
   setSelect: document.getElementById("setSelect"),
   applySetBtn: document.getElementById("applySetBtn"),
@@ -58,29 +59,47 @@ function escapeHtml(s){
 }
 function setStatus(msg){ els.status.textContent = msg; }
 function isAudioFile(name){ const low = name.toLowerCase(); return EXT_OK.some(ext => low.endsWith(ext)); }
-function niceTitle(fileName){ return fileName.replace(/\.[^/.]+$/, "").replace(/[_-]+/g," ").replace(/\s+/g," ").trim(); }
+
+function readJson(key, fallback){
+  try{ const raw = localStorage.getItem(key); if (!raw) return fallback; return JSON.parse(raw); }
+  catch{ return fallback; }
+}
+function writeJson(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); }catch{}
+}
+
+function niceTitle(file){
+  return file
+    .replace(/\.[^.]+$/,"")
+    .replaceAll("_"," ")
+    .replaceAll("-"," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function shortName(url){
+  try{
+    const last = decodeURIComponent(url.split("/").pop() || "");
+    return niceTitle(last).slice(0, 18);
+  }catch{ return "Áudio"; }
+}
 
 function getTrackVol(url){
-  const v = trackVol[url];
-  return (typeof v === "number" && v >= 0 && v <= 1) ? v : 1.0;
+  const v = trackVol?.[url];
+  return (typeof v === "number") ? clamp01(v) : 1;
 }
 function setTrackVol(url, v){
   trackVol[url] = clamp01(v);
   writeJson(LS_TRACKVOL, trackVol);
 }
+
 function effectiveAmbientVol(url){
-  return clamp01(clamp01(parseFloat(els.ambientVol.value)) * getTrackVol(url));
+  return clamp01(getTrackVol(url) * parseFloat(els.ambientVol.value));
 }
 function effectiveFxVol(url){
-  return clamp01(clamp01(parseFloat(els.fxVol.value)) * getTrackVol(url));
+  return clamp01(getTrackVol(url) * parseFloat(els.fxVol.value));
 }
 
-function shortName(url){
-  try{
-    const name = decodeURIComponent(url.split("/").pop() || url);
-    return niceTitle(name).slice(0, 18);
-  }catch{ return "Áudio"; }
-}
 function updateAmbientPill(){
   if (ambientPlayers.size === 0){ els.nowAmbients.textContent = "Ambientes: —"; return; }
   const names = [...ambientPlayers.keys()].slice(0,3).map(shortName);
@@ -89,15 +108,122 @@ function updateAmbientPill(){
 }
 function updateFxCount(){ els.fxCount.textContent = `Efeitos: ${fxPlayers.size}`; }
 
+/* now playing (trocar/volume individual) */
+function stopOneAmbient(url){
+  const a = ambientPlayers.get(url);
+  if (a){ try{ a.pause(); }catch(e){} }
+  ambientPlayers.delete(url);
+  updateAmbientPill();
+  renderNowPlaying();
+  saveLastScene();
+}
+function startAmbientByUrl(url){
+  if (!url || ambientPlayers.has(url)) return;
+  ensureUnlocked();
+  const a = new Audio(url);
+  a.loop = true;
+  a.preload = "auto";
+  a.volume = effectiveAmbientVol(url);
+  a.play().catch(()=>{});
+  ambientPlayers.set(url, a);
+  updateAmbientPill();
+  renderNowPlaying();
+  saveLastScene();
+}
+function swapAmbient(oldUrl, newUrl){
+  if (!newUrl || newUrl === oldUrl) return;
+
+  // mantém o volume individual do antigo no novo (se o novo ainda não tiver)
+  const oldV = getTrackVol(oldUrl);
+  if (trackVol[newUrl] == null) setTrackVol(newUrl, oldV);
+
+  stopOneAmbient(oldUrl);
+  startAmbientByUrl(newUrl);
+}
+
+function renderNowPlaying(){
+  if (!els.nowPlayingList) return;
+
+  const all = window.__ALL_TRACKS || [];
+  const mkOptions = () => {
+    const opts = ['<option value="">Trocar por…</option>'];
+    for (const t of all){
+      const label = `${t.theme} — ${t.title}`;
+      opts.push(`<option value="${escapeHtml(t.url)}">${escapeHtml(label)}</option>`);
+    }
+    return opts.join("");
+  };
+
+  els.nowPlayingList.innerHTML = "";
+
+  const ambUrls = [...ambientPlayers.keys()];
+  if (ambUrls.length === 0){
+    const div = document.createElement("div");
+    div.className = "status";
+    div.textContent = "Nenhum ambiente tocando.";
+    els.nowPlayingList.appendChild(div);
+    return;
+  }
+
+  for (const url of ambUrls){
+    const div = document.createElement("div");
+    div.className = "nowItem";
+
+    const currentVol = getTrackVol(url);
+
+    div.innerHTML = `
+      <div class="nowLeft">
+        <div class="nowTitle">${escapeHtml(shortName(url))}</div>
+        <div class="nowMeta">${escapeHtml(decodeURIComponent(url.split("/").pop() || ""))}</div>
+      </div>
+      <div class="nowRight">
+        <div class="volBox compact">
+          <label>Vol</label>
+          <input class="volSlider" type="range" min="0" max="1" step="0.01" value="${currentVol}">
+        </div>
+        <select class="swapSelect">
+          ${mkOptions()}
+        </select>
+        <button class="btn danger stopOne" type="button" title="Parar este ambiente">✕</button>
+      </div>
+    `;
+
+    const stopBtn = div.querySelector(".stopOne");
+    const sel = div.querySelector(".swapSelect");
+    const slider = div.querySelector(".volSlider");
+
+    stopBtn.addEventListener("click", () => stopOneAmbient(url));
+
+    sel.addEventListener("change", () => {
+      const newUrl = sel.value;
+      sel.value = "";
+      swapAmbient(url, newUrl);
+    });
+
+    slider.addEventListener("input", () => {
+      const v = clamp01(parseFloat(slider.value));
+      setTrackVol(url, v);
+      const amb = ambientPlayers.get(url);
+      if (amb) amb.volume = effectiveAmbientVol(url);
+      saveLastScene();
+    });
+
+    els.nowPlayingList.appendChild(div);
+  }
+}
+
 /* playback */
-function ensureUnlocked(){ /* iOS gate */ }
-async function unlockAudio(){
+function ensureUnlocked(){
+  /* iOS gate */
+  if (unlocked) return;
+  // só marca como desbloqueado quando usuário clicar no botão
+}
+
+function unlockAudio(){
   try{
     const a = new Audio();
-    a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
-    a.volume = 0;
-    await a.play();
-    a.pause();
+    a.muted = true;
+    a.play().catch(()=>{});
   }catch(e){}
   unlocked = true;
   els.unlockDot.classList.add("on");
@@ -111,6 +237,7 @@ function toggleAmbient(track){
     try{ ambientPlayers.get(url).pause(); }catch(e){}
     ambientPlayers.delete(url);
     updateAmbientPill();
+    renderNowPlaying();
     saveLastScene();
     return;
   }
@@ -122,6 +249,7 @@ function toggleAmbient(track){
   a.play().catch(()=>{});
   ambientPlayers.set(url, a);
   updateAmbientPill();
+  renderNowPlaying();
   saveLastScene();
 }
 
@@ -129,6 +257,7 @@ function stopAllAmbient(){
   for (const a of ambientPlayers.values()){ try{ a.pause(); }catch(e){} }
   ambientPlayers.clear();
   updateAmbientPill();
+  renderNowPlaying();
   saveLastScene();
 }
 
@@ -166,26 +295,47 @@ function clearFx(){
   saveLastScene();
 }
 
-/* themes */
-function renderThemes(themes){
-  const filter = (els.themeFilter.value || "").toLowerCase().trim();
-  const filtered = !filter ? themes : themes.filter(t => t.name.toLowerCase().includes(filter));
+/* GitHub API helpers (somente usado no botão Recarregar) */
+async function ghFetch(url){
+  const res = await fetch(url, { headers: { "Accept":"application/vnd.github+json" }});
+  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  return await res.json();
+}
+async function listDir(path){
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`;
+  return await ghFetch(api);
+}
 
+function renderThemes(themes){
   els.themes.innerHTML = "";
-  for (const t of filtered){
-    const btn = document.createElement("button");
-    btn.className = "themeBtn";
-    btn.type = "button";
-    btn.innerHTML = `<span class="name">${escapeHtml(t.name)}</span><span class="count">${t.count}</span>`;
-    btn.addEventListener("click", () => openTheme(t));
-    els.themes.appendChild(btn);
-  }
+  const filter = (els.themeFilter.value || "").trim().toLowerCase();
+
+  const filtered = themes.filter(t => !filter || t.name.toLowerCase().includes(filter));
   if (filtered.length === 0){
+    setStatus("Nenhum tema com esse filtro.");
+  }
+
+  for (const theme of filtered){
     const div = document.createElement("div");
-    div.className = "status";
-    div.textContent = "Nenhum tema com esse filtro.";
+    div.className = "theme";
+    div.innerHTML = `
+      <div class="name">${escapeHtml(theme.name)}</div>
+      <div class="count">${theme.count || (theme.items?.length || 0)} arquivo(s)</div>
+    `;
+    div.addEventListener("click", () => openTheme(theme));
     els.themes.appendChild(div);
   }
+}
+
+function flattenAllTracks(themes){
+  const all = [];
+  for (const t of (themes || [])){
+    for (const it of (t.items || [])){
+      all.push({ theme: t.name, title: it.title, file: it.file, url: it.url });
+    }
+  }
+  all.sort((a,b)=>(a.theme + " " + a.title).localeCompare(b.theme + " " + b.title, "pt-BR"));
+  window.__ALL_TRACKS = all;
 }
 
 function openTheme(theme){
@@ -235,6 +385,7 @@ function openTheme(theme){
       if (amb) amb.volume = effectiveAmbientVol(it.url);
       const fx = fxPlayers.get(it.url);
       if (fx) fx.volume = effectiveFxVol(it.url);
+      renderNowPlaying();
       saveLastScene();
     });
 
@@ -259,37 +410,23 @@ async function loadLibraryPreferManifest(){
 
     writeJson(LS_CACHE, { themes: data.themes, ts: Date.now() });
     window.__THEMES = data.themes;
+    flattenAllTracks(data.themes);
     renderThemes(data.themes);
     setStatus(`Pronto: ${data.themes.length} tema(s) (playlist.json).`);
+    renderNowPlaying();
     return;
   }catch(e){
     const cache = readJson(LS_CACHE, null);
     if (cache?.themes){
       window.__THEMES = cache.themes;
+      flattenAllTracks(cache.themes);
       renderThemes(cache.themes);
       setStatus(`Pronto: ${cache.themes.length} tema(s) (cache).`);
+      renderNowPlaying();
       return;
     }
-    setStatus("Não achei playlist.json nem cache. Use Recarregar (PC) para gerar cache, ou faça Commit do playlist.json.");
+    setStatus("Falha ao carregar playlist.json e cache vazio. Use Recarregar (GitHub API).");
   }
-}
-
-/* GitHub API reload (pode dar 403 no iPad) */
-function ghUrl(path){
-  const p = encodeURIComponent(path).replace(/%2F/g, "/");
-  return `https://api.github.com/repos/${OWNER}/${REPO}/contents/${p}?ref=${encodeURIComponent(BRANCH)}`;
-}
-async function fetchJson(url){
-  const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" } });
-  if (!res.ok){
-    const text = await res.text().catch(()=> "");
-    throw new Error(`GitHub API ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json();
-}
-async function listDir(path){
-  const data = await fetchJson(ghUrl(path));
-  return Array.isArray(data) ? data : [];
 }
 
 async function reloadFromGitHubAPI(){
@@ -313,57 +450,120 @@ async function reloadFromGitHubAPI(){
   }
 
   window.__THEMES = themes;
+  flattenAllTracks(themes);
   renderThemes(themes);
   writeJson(LS_CACHE, { themes, ts: Date.now() });
   setStatus(`Pronto: ${themes.length} tema(s) (GitHub API).`);
+  renderNowPlaying();
 }
 
-/* Sets */
-function readSets(){ return readJson(LS_SETS, { sets: [] }); }
-function writeSets(obj){ writeJson(LS_SETS, obj); }
-function refreshSetSelect(){
-  const { sets } = readSets();
-  els.setSelect.innerHTML = "";
-  const opt0 = document.createElement("option");
-  opt0.value = "";
-  opt0.textContent = "Selecione um set…";
-  els.setSelect.appendChild(opt0);
-  for (const s of sets){
-    const opt = document.createElement("option");
-    opt.value = s.id;
-    opt.textContent = s.name;
-    els.setSelect.appendChild(opt);
-  }
+/* sets */
+function readSets(){
+  const data = readJson(LS_SETS, { sets: [] });
+  if (!Array.isArray(data.sets)) data.sets = [];
+  return data;
 }
-function currentScene(){
-  return {
-    ambients: [...ambientPlayers.keys()],
-    fx: [...fxPlayers.keys()],
+function writeSets(sets){
+  writeJson(LS_SETS, { sets });
+}
+function uid(){
+  return Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+function saveLastScene(){
+  const scene = {
     ambientVol: clamp01(parseFloat(els.ambientVol.value)),
     fxVol: clamp01(parseFloat(els.fxVol.value)),
-    trackVol: trackVol,
-    ts: Date.now()
+    ambients: [...ambientPlayers.keys()],
+    fx: [...fxPlayers.keys()],
+    trackVol
   };
+  writeJson(LS_LAST, { scene, lastThemeName: lastTheme?.name || null });
 }
+function restoreLastScene(){
+  const data = readJson(LS_LAST, null);
+  if (!data?.scene) return;
+
+  els.ambientVol.value = clamp01(data.scene.ambientVol ?? 0.7);
+  els.fxVol.value = clamp01(data.scene.fxVol ?? 0.9);
+
+  if (data.scene.trackVol && typeof data.scene.trackVol === "object"){
+    trackVol = data.scene.trackVol;
+    writeJson(LS_TRACKVOL, trackVol);
+  }
+
+  for (const url of (data.scene.ambients || [])){
+    const a = new Audio(url);
+    a.loop = true;
+    a.preload = "auto";
+    a.volume = effectiveAmbientVol(url);
+    a.play().catch(()=>{});
+    ambientPlayers.set(url, a);
+  }
+
+  for (const url of (data.scene.fx || [])){
+    const a = new Audio(url);
+    a.preload = "auto";
+    a.volume = effectiveFxVol(url);
+    a.addEventListener("ended", () => {
+      fxPlayers.delete(url);
+      updateFxCount();
+      saveLastScene();
+    });
+    fxPlayers.set(url, a);
+    a.play().catch(()=>{});
+  }
+
+  updateAmbientPill();
+  updateFxCount();
+  renderNowPlaying();
+
+  // tenta abrir o último tema quando a lib estiver pronta (feito depois do load)
+  window.__LAST_THEME_NAME = data.lastThemeName || null;
+}
+
+function refreshSetUI(){
+  const { sets } = readSets();
+  els.setSelect.innerHTML = `<option value="">Selecione…</option>` + sets.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+}
+
 function saveSet(){
   const name = (els.setName.value || "").trim();
-  if (!name){ alert("Digite um nome para o set."); return; }
-  const obj = readSets();
-  const id = String(Date.now());
-  obj.sets.push({ id, name, scene: currentScene() });
-  writeSets(obj);
-  els.setName.value = "";
-  refreshSetSelect();
-  els.setSelect.value = id;
+  if (!name){ alert("Dê um nome para o set."); return; }
+
+  const { sets } = readSets();
+  const scene = {
+    ambientVol: clamp01(parseFloat(els.ambientVol.value)),
+    fxVol: clamp01(parseFloat(els.fxVol.value)),
+    ambients: [...ambientPlayers.keys()],
+    fx: [...fxPlayers.keys()],
+    trackVol
+  };
+
+  const existing = sets.find(x => x.name.toLowerCase() === name.toLowerCase());
+  if (existing){
+    if (!confirm("Já existe um set com esse nome. Sobrescrever?")) return;
+    existing.scene = scene;
+  }else{
+    sets.push({ id: uid(), name, scene });
+  }
+  writeSets(sets);
+  refreshSetUI();
+  alert("Set salvo!");
 }
+
 function deleteSet(){
   const id = els.setSelect.value;
   if (!id){ alert("Selecione um set para excluir."); return; }
-  const obj = readSets();
-  obj.sets = obj.sets.filter(s => s.id !== id);
-  writeSets(obj);
-  refreshSetSelect();
+  const { sets } = readSets();
+  const idx = sets.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  if (!confirm(`Excluir o set "${sets[idx].name}"?`)) return;
+  sets.splice(idx, 1);
+  writeSets(sets);
+  refreshSetUI();
+  els.setName.value = "";
 }
+
 function applySet(){
   const id = els.setSelect.value;
   if (!id){ alert("Selecione um set para aplicar."); return; }
@@ -406,6 +606,7 @@ function applySet(){
 
   updateAmbientPill();
   updateFxCount();
+  renderNowPlaying();
   if (lastTheme) openTheme(lastTheme);
   saveLastScene();
 }
@@ -416,57 +617,37 @@ function resetTrackVols(){
   trackVol = {};
   writeJson(LS_TRACKVOL, trackVol);
   if (lastTheme) openTheme(lastTheme);
-  for (const [url, a] of ambientPlayers) a.volume = effectiveAmbientVol(url);
-  for (const [url, a] of fxPlayers) a.volume = effectiveFxVol(url);
+  renderNowPlaying();
   saveLastScene();
 }
 
-/* persistence */
-function readJson(key, fallback){
-  try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-  catch{ return fallback; }
-}
-function writeJson(key, value){
-  try{ localStorage.setItem(key, JSON.stringify(value)); }catch{}
-}
-function saveLastScene(){ writeJson(LS_LAST, currentScene()); }
-function restoreLastScene(){
-  const s = readJson(LS_LAST, null);
-  if (!s) return;
-  els.ambientVol.value = clamp01(s.ambientVol ?? 0.7);
-  els.fxVol.value = clamp01(s.fxVol ?? 0.9);
-  if (s.trackVol && typeof s.trackVol === "object"){
-    trackVol = s.trackVol;
-    writeJson(LS_TRACKVOL, trackVol);
-  }else{
-    trackVol = readJson(LS_TRACKVOL, {});
-  }
-  updateAmbientPill();
-  updateFxCount();
-}
-
-/* events */
-els.reloadBtn.addEventListener("click", async () => {
-  try{
-    await reloadFromGitHubAPI();
-  }catch(err){
-    // fallback to manifest/cached
-    setStatus(err.message + " — usando playlist.json/cache.");
-    await loadLibraryPreferManifest();
-  }
+/* init */
+els.themeFilter.addEventListener("input", () => {
+  const themes = window.__THEMES || [];
+  renderThemes(themes);
 });
-els.themeFilter.addEventListener("input", () => renderThemes(window.__THEMES || []));
-els.unlockBtn.addEventListener("click", () => unlockAudio());
+els.reloadBtn.addEventListener("click", async () => {
+  try{ await reloadFromGitHubAPI(); }
+  catch(e){ setStatus("Falha ao recarregar via GitHub API (rate limit?)."); }
+});
+els.unlockBtn.addEventListener("click", () => {
+  unlockAudio();
+  els.unlockBtn.classList.add("primary");
+});
 els.stopAllAmbientBtn.addEventListener("click", stopAllAmbient);
 els.clearFxBtn.addEventListener("click", clearFx);
 els.resetTrackVolBtn.addEventListener("click", resetTrackVols);
 
 els.ambientVol.addEventListener("input", () => {
-  for (const [url, a] of ambientPlayers) a.volume = effectiveAmbientVol(url);
+  for (const [url, a] of ambientPlayers.entries()){
+    a.volume = effectiveAmbientVol(url);
+  }
   saveLastScene();
 });
 els.fxVol.addEventListener("input", () => {
-  for (const [url, a] of fxPlayers) a.volume = effectiveFxVol(url);
+  for (const [url, a] of fxPlayers.entries()){
+    a.volume = effectiveFxVol(url);
+  }
   saveLastScene();
 });
 
@@ -474,9 +655,23 @@ els.saveSetBtn.addEventListener("click", saveSet);
 els.deleteSetBtn.addEventListener("click", deleteSet);
 els.applySetBtn.addEventListener("click", applySet);
 
-/* init */
-refreshSetSelect();
+els.setSelect.addEventListener("change", () => {
+  const id = els.setSelect.value;
+  if (!id) return;
+  const { sets } = readSets();
+  const s = sets.find(x => x.id === id);
+  if (s) els.setName.value = s.name;
+});
+
+refreshSetUI();
 restoreLastScene();
-updateAmbientPill();
-updateFxCount();
-loadLibraryPreferManifest();
+
+loadLibraryPreferManifest().then(() => {
+  // tenta abrir o último tema, se existir
+  const target = window.__LAST_THEME_NAME;
+  if (target && Array.isArray(window.__THEMES)){
+    const t = window.__THEMES.find(x => x.name === target);
+    if (t) openTheme(t);
+  }
+  renderNowPlaying();
+});
