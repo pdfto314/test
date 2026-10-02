@@ -1,614 +1,618 @@
-﻿[
-    {
-        "folder":  "chuva",
-        "file":  "Amb_Forest_Thunder_Rain_Night_KA.mp3",
-        "title":  "Amb_Forest_Thunder_Rain_Night_KA",
-        "username":  "Kristoffer_Andersson",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  118.4,
-        "freesound_url":  "https://freesound.org/people/Kristoffer_Andersson/sounds/728687/"
-    },
-    {
-        "folder":  "chuva",
-        "file":  "Rain and Thunder Ambience TÃ¼bingen.mp3",
-        "title":  "Rain and Thunder Ambience TÃ¼bingen",
-        "username":  "Sheyvan",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  821.592,
-        "freesound_url":  "https://freesound.org/people/Sheyvan/sounds/369547/"
-    },
-    {
-        "folder":  "chuva",
-        "file":  "Ripples 1.wav.mp3",
-        "title":  "Ripples 1.wav",
-        "username":  "Owl",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  218.5,
-        "freesound_url":  "https://freesound.org/people/Owl/sounds/387912/"
-    },
-    {
-        "folder":  "chuva",
-        "file":  "Glitter.mp3",
-        "title":  "Glitter",
-        "username":  "YellowTree",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  22.1429,
-        "freesound_url":  "https://freesound.org/people/YellowTree/sounds/583860/"
-    },
-    {
-        "folder":  "chuva",
-        "file":  "2014-06-16 thunderstorm at bruneau dunes.wav.mp3",
-        "title":  "2014-06-16 thunderstorm at bruneau dunes.wav",
-        "username":  "tim.kahn",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  641.775,
-        "freesound_url":  "https://freesound.org/people/tim.kahn/sounds/240871/"
-    },
-    {
-        "folder":  "chuva",
-        "file":  "RAIN_Eaves Drops.Melted Snow.Rain.Autumn.City Yard 5_EM.mp3",
-        "title":  "RAIN_Eaves Drops.Melted Snow.Rain.Autumn.City Yard 5_EM",
-        "username":  "newlocknew",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  58.0979,
-        "freesound_url":  "https://freesound.org/people/newlocknew/sounds/710233/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "Horror Atmosphere 7_The Lair_Loop.mp3",
-        "title":  "Horror Atmosphere 7_The Lair_Loop",
-        "username":  "Ulrich_Wehner",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  180.0,
-        "freesound_url":  "https://freesound.org/people/Ulrich_Wehner/sounds/736880/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "Magic - Unpleasant Tonal Ambience.mp3",
-        "title":  "Magic - Unpleasant Tonal Ambience",
-        "username":  "Vrymaa",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  121.655,
-        "freesound_url":  "https://freesound.org/people/Vrymaa/sounds/825855/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "AMBDsgn_Madness Prison.Ambience.Laughter.Screams.Footsteps.Cell Doors.Ceiling Leak.A Faulty Lamp.Electric Hum 1_EM.mp3",
-        "title":  "AMBDsgn_Madness Prison.Ambience.Laughter.Screams.Footsteps.Cell Doors.Ceiling Leak.A Faulty Lamp.Electric Hum 1_EM",
-        "username":  "newlocknew",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  200.557,
-        "freesound_url":  "https://freesound.org/people/newlocknew/sounds/841640/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "AMBDsgn_Creepy Troll cave.Drops.Rumble.Bats.Sticky worms.Monk whispers_EM.mp3",
-        "title":  "AMBDsgn_Creepy Troll cave.Drops.Rumble.Bats.Sticky worms.Monk whispers_EM.mp3",
-        "username":  "newlocknew",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  77.0341,
-        "freesound_url":  "https://freesound.org/people/newlocknew/sounds/705429/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "Dungeon Ambiance.mp3",
-        "title":  "Dungeon Ambiance",
-        "username":  "phlair",
-        "license":  "http://creativecommons.org/licenses/by/3.0/",
-        "duration":  96.0,
-        "freesound_url":  "https://freesound.org/people/phlair/sounds/388340/"
-    },
-    {
-        "folder":  "dungeon",
-        "file":  "Noedell - Royalty FREE Horror_halloween Ambience.mp3",
-        "title":  "Noedell - Royalty FREE Horror/halloween Ambience",
-        "username":  "Noedell",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  570.857,
-        "freesound_url":  "https://freesound.org/people/Noedell/sounds/364221/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "Amb_Forest_Thunder_Rain_Night_KA.mp3",
-        "title":  "Amb_Forest_Thunder_Rain_Night_KA",
-        "username":  "Kristoffer_Andersson",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  118.4,
-        "freesound_url":  "https://freesound.org/people/Kristoffer_Andersson/sounds/728687/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "Frog Forest.mp3",
-        "title":  "Frog Forest",
-        "username":  "absent1010",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  103.6,
-        "freesound_url":  "https://freesound.org/people/absent1010/sounds/615001/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "Ambience_ Forest Lake at Night.mp3",
-        "title":  "Ambience: Forest Lake at Night",
-        "username":  "Sheyvan",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  71.4095,
-        "freesound_url":  "https://freesound.org/people/Sheyvan/sounds/524287/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "Disturbance (racing cars) during evening birds recording on Dartmoor.mp3",
-        "title":  "Disturbance (racing cars) during evening birds recording on Dartmoor",
-        "username":  "Philip_Goddard",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  628.866,
-        "freesound_url":  "https://freesound.org/people/Philip_Goddard/sounds/662487/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "night_on_the_river.WAV.mp3",
-        "title":  "night_on_the_river.WAV",
-        "username":  "WilliamDauricio",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  239.449,
-        "freesound_url":  "https://freesound.org/people/WilliamDauricio/sounds/658081/"
-    },
-    {
-        "folder":  "floresta",
-        "file":  "evening woods 01 NL 151009_0806.flac.mp3",
-        "title":  "evening woods 01 NL 151009_0806.flac",
-        "username":  "klankbeeld",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  181.144,
-        "freesound_url":  "https://freesound.org/people/klankbeeld/sounds/324409/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "Ocean Waves Crashing on the Coast of Big Lagoon, Redwoods.mp3",
-        "title":  "Ocean Waves Crashing on the Coast of Big Lagoon, Redwoods",
-        "username":  "CVLTIV8R",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  80.3756,
-        "freesound_url":  "https://freesound.org/people/CVLTIV8R/sounds/803679/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "Crashing Waves - Pacific Ocean.mp3",
-        "title":  "Crashing Waves - Pacific Ocean",
-        "username":  "SecureSubset",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  634.033,
-        "freesound_url":  "https://freesound.org/people/SecureSubset/sounds/817075/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "250815_034144_PH_Calm_sea_at_night.mp3",
-        "title":  "250815_034144_PH_Calm_sea_at_night",
-        "username":  "kevp888",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  175.527,
-        "freesound_url":  "https://freesound.org/people/kevp888/sounds/836484/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "250730_061119_PH_Ocean_waves_at_White_Beach.mp3",
-        "title":  "250730_061119_PH_Ocean_waves_at_White_Beach",
-        "username":  "kevp888",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  429.6,
-        "freesound_url":  "https://freesound.org/people/kevp888/sounds/829448/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "Waves.wav(es).mp3",
-        "title":  "Waves.wav(es)",
-        "username":  "BeneGe",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  39.5927,
-        "freesound_url":  "https://freesound.org/people/BeneGe/sounds/346381/"
-    },
-    {
-        "folder":  "mar",
-        "file":  "Ocean Ambiance Night.mp3",
-        "title":  "Ocean Ambiance Night",
-        "username":  "nick121087",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  59.2213,
-        "freesound_url":  "https://freesound.org/people/nick121087/sounds/476886/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "Ominous Horror Soundtrack.mp3",
-        "title":  "Ominous Horror Soundtrack",
-        "username":  "Matio888",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  195.469,
-        "freesound_url":  "https://freesound.org/people/Matio888/sounds/793486/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "Enchanted cave.mp3",
-        "title":  "Enchanted cave",
-        "username":  "xkeril",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  38.5568,
-        "freesound_url":  "https://freesound.org/people/xkeril/sounds/714699/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "DSGNDron_Atonal Mysterious Atmosphere 6_EM.wav.mp3",
-        "title":  "DSGNDron_Atonal Mysterious Atmosphere 6_EM.wav",
-        "username":  "newlocknew",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  162.978,
-        "freesound_url":  "https://freesound.org/people/newlocknew/sounds/652714/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "DSGNDron_Eerie Mysterious Breathing Ambience 1_EM.wav.mp3",
-        "title":  "DSGNDron_Eerie Mysterious Breathing Ambience 1_EM.wav",
-        "username":  "newlocknew",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  156.751,
-        "freesound_url":  "https://freesound.org/people/newlocknew/sounds/702784/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "Transition to the forge.mp3",
-        "title":  "Transition to the forge",
-        "username":  "Kronek9",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  37.3704,
-        "freesound_url":  "https://freesound.org/people/Kronek9/sounds/788070/"
-    },
-    {
-        "folder":  "tensÃ£o",
-        "file":  "Doomed Drone.mp3",
-        "title":  "Doomed Drone",
-        "username":  "Soparnik",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  125.668,
-        "freesound_url":  "https://freesound.org/people/Soparnik/sounds/786902/"
-    },
-    {
-        "folder":  "goblin",
-        "file":  "Pug Dog Grunts, Breaths, Snarls.mp3",
-        "title":  "Pug Dog Grunts, Breaths, Snarls",
-        "username":  "EpicWizard",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  55.0925,
-        "freesound_url":  "https://freesound.org/people/EpicWizard/sounds/377001/"
-    },
-    {
-        "folder":  "goblin",
-        "file":  "terrifying scream.wav.mp3",
-        "title":  "terrifying scream.wav",
-        "username":  "lodovico",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  27.162,
-        "freesound_url":  "https://freesound.org/people/lodovico/sounds/275170/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "Igor- I wan\u0027t dinner.wav.mp3",
-        "title":  "Igor- I wan\u0027t dinner.wav",
-        "username":  "be-steele",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  51.8855,
-        "freesound_url":  "https://freesound.org/people/be-steele/sounds/128025/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "Mars Gets Combed.mp3",
-        "title":  "Mars Gets Combed",
-        "username":  "be-steele",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  110.406,
-        "freesound_url":  "https://freesound.org/people/be-steele/sounds/718997/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "Dog howling from another room - Howls.mp3",
-        "title":  "Dog howling from another room - Howls",
-        "username":  "Iceofdoom",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  33.6057,
-        "freesound_url":  "https://freesound.org/people/Iceofdoom/sounds/667332/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "StormKloud Sled Dogs.aif.mp3",
-        "title":  "StormKloud Sled Dogs.aif",
-        "username":  "be-steele",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  97.3957,
-        "freesound_url":  "https://freesound.org/people/be-steele/sounds/128240/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "Dragon Lines (Many).mp3",
-        "title":  "Dragon Lines (Many)",
-        "username":  "SnowFightStudios",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  265.566,
-        "freesound_url":  "https://freesound.org/people/SnowFightStudios/sounds/669888/"
-    },
-    {
-        "folder":  "warg",
-        "file":  "bark.mp3",
-        "title":  "bark.mp3",
-        "username":  "saha213131",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  20.876,
-        "freesound_url":  "https://freesound.org/people/saha213131/sounds/692661/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Zombie Sounds Effects (No Reverb).wav.mp3",
-        "title":  "Zombie Sounds Effects (No Reverb).wav",
-        "username":  "robert18productions",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  68.8767,
-        "freesound_url":  "https://freesound.org/people/robert18productions/sounds/634697/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Classic Zombie moans and attack by Bernuy CC BY.mp3",
-        "title":  "Classic Zombie moans and attack by Bernuy CC BY",
-        "username":  "Bernuy",
-        "license":  "http://creativecommons.org/licenses/by/3.0/",
-        "duration":  62.0757,
-        "freesound_url":  "https://freesound.org/people/Bernuy/sounds/415524/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Zombie 07.wav.mp3",
-        "title":  "Zombie 07.wav",
-        "username":  "Massivecarcrash",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  42.92,
-        "freesound_url":  "https://freesound.org/people/Massivecarcrash/sounds/341528/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Zombie 02.wav.mp3",
-        "title":  "Zombie 02.wav",
-        "username":  "Massivecarcrash",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  171.3,
-        "freesound_url":  "https://freesound.org/people/Massivecarcrash/sounds/341525/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Zombie 05.wav.mp3",
-        "title":  "Zombie 05.wav",
-        "username":  "Massivecarcrash",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  101.4,
-        "freesound_url":  "https://freesound.org/people/Massivecarcrash/sounds/341529/"
-    },
-    {
-        "folder":  "morto_vivo",
-        "file":  "Zombie 03.wav.mp3",
-        "title":  "Zombie 03.wav",
-        "username":  "Massivecarcrash",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  88.8,
-        "freesound_url":  "https://freesound.org/people/Massivecarcrash/sounds/341524/"
-    },
-    {
-        "folder":  "cultista",
-        "file":  "Chapel of sacrifice.mp3",
-        "title":  "Chapel of sacrifice",
-        "username":  "Victor_Natas",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  54.5636,
-        "freesound_url":  "https://freesound.org/people/Victor_Natas/sounds/616217/"
-    },
-    {
-        "folder":  "cultista",
-        "file":  "Satanic tribe.mp3",
-        "title":  "Satanic tribe",
-        "username":  "Victor_Natas",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  49.0405,
-        "freesound_url":  "https://freesound.org/people/Victor_Natas/sounds/613098/"
-    },
-    {
-        "folder":  "cultista",
-        "file":  "Defensible Twister.mp3",
-        "title":  "Defensible Twister",
-        "username":  "Brazilio123",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  433.0,
-        "freesound_url":  "https://freesound.org/people/Brazilio123/sounds/661435/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "Anji Insect Chorus.wav.mp3",
-        "title":  "Anji Insect Chorus.wav",
-        "username":  "RTB45",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  282.68,
-        "freesound_url":  "https://freesound.org/people/RTB45/sounds/156666/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "remix of 168947__audiorichter__monster.flac.mp3",
-        "title":  "remix of 168947__audiorichter__monster.flac",
-        "username":  "Timbre",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  120.34,
-        "freesound_url":  "https://freesound.org/people/Timbre/sounds/169347/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "smok przyciÄty.WAV.mp3",
-        "title":  "smok przyciÄty.WAV",
-        "username":  "RafMOL",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  24.7866,
-        "freesound_url":  "https://freesound.org/people/RafMOL/sounds/584734/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "Dragon roaring sound effect.mp3",
-        "title":  "Dragon roaring sound effect",
-        "username":  "Mastersoundboy2005",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  21.5359,
-        "freesound_url":  "https://freesound.org/people/Mastersoundboy2005/sounds/713040/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "Freaky Wailing.mp3",
-        "title":  "Freaky Wailing",
-        "username":  "SnowFightStudios",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  28.546,
-        "freesound_url":  "https://freesound.org/people/SnowFightStudios/sounds/692002/"
-    },
-    {
-        "folder":  "dragao",
-        "file":  "monster_bites_FINAL_06192025.mp3",
-        "title":  "monster_bites_FINAL_06192025",
-        "username":  "Artninja",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  58.3074,
-        "freesound_url":  "https://freesound.org/people/Artninja/sounds/812556/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "Custom_ambient_sword_battle.mp3",
-        "title":  "Custom_ambient_sword_battle",
-        "username":  "Artninja",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  23.5102,
-        "freesound_url":  "https://freesound.org/people/Artninja/sounds/753579/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "metal coffee cup clangs.flac.mp3",
-        "title":  "metal coffee cup clangs.flac",
-        "username":  "breadparticles",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  61.0424,
-        "freesound_url":  "https://freesound.org/people/breadparticles/sounds/657827/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "Custom_sword_hits_demonslayer_inspired_06152023_final_w_rattle.mp3",
-        "title":  "Custom_sword_hits_demonslayer_inspired_06152023_final_w_rattle.mp3",
-        "username":  "Artninja",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  27.6208,
-        "freesound_url":  "https://freesound.org/people/Artninja/sounds/699991/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "Mongolian film windblown steppe1.wav.mp3",
-        "title":  "Mongolian film windblown steppe1.wav",
-        "username":  "Jim-Bretherick",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  170.0,
-        "freesound_url":  "https://freesound.org/people/Jim-Bretherick/sounds/667115/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "shovel_hit_spade_mimicking_sword_clashing_sounds.mp3",
-        "title":  "shovel_hit_spade_mimicking_sword_clashing_sounds",
-        "username":  "Artninja",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  45.2102,
-        "freesound_url":  "https://freesound.org/people/Artninja/sounds/725071/"
-    },
-    {
-        "folder":  "batalha",
-        "file":  "custom_leo_heavy_sword_swing_reverse_doppler_ringouts_sounds_FINAL_12112024.mp3",
-        "title":  "custom_leo_heavy_sword_swing_reverse_doppler_ringouts_sounds_FINAL_12112024",
-        "username":  "Artninja",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  69.4885,
-        "freesound_url":  "https://freesound.org/people/Artninja/sounds/777675/"
-    },
-    {
-        "folder":  "emboscada",
-        "file":  "Skoke - Magic forest.wav.mp3",
-        "title":  "Skoke - Magic forest.wav",
-        "username":  "dibko",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  295.061,
-        "freesound_url":  "https://freesound.org/people/dibko/sounds/697052/"
-    },
-    {
-        "folder":  "emboscada",
-        "file":  "Distant Wind Chimes - Bamboo, Pluto, Gypsy Mezzo \u0026 Soprano - and birds - Hunter\u0027s Path, Teign Gorge (position 1) - excer.mp3",
-        "title":  "Distant Wind Chimes - Bamboo, Pluto, Gypsy Mezzo \u0026 Soprano - and birds - Hunter\u0027s Path, Teign Gorge (position 1) - excerpt",
-        "username":  "Philip_Goddard",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  310.533,
-        "freesound_url":  "https://freesound.org/people/Philip_Goddard/sounds/180906/"
-    },
-    {
-        "folder":  "emboscada",
-        "file":  "city-canal ambiance Verwersstroom Waterstraat s-Hertogenbosch Netherlands 1218 pm 251001_0044.mp3",
-        "title":  "city-canal ambiance Verwersstroom Waterstraat s-Hertogenbosch Netherlands 1218 pm 251001_0044",
-        "username":  "klankbeeld",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  120.0,
-        "freesound_url":  "https://freesound.org/people/klankbeeld/sounds/828663/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Old ritual - Fantasy Background Soundscape Haunted Atmo Music Synth Drum Orchestra - Mastered.wav.mp3",
-        "title":  "Old ritual - Fantasy Background Soundscape Haunted Atmo Music Synth Drum Orchestra - Mastered.wav",
-        "username":  "szegvari",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  78.6294,
-        "freesound_url":  "https://freesound.org/people/szegvari/sounds/595853/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Forest Angel Ritual Dark Atmo.wav.mp3",
-        "title":  "Forest Angel Ritual Dark Atmo.wav",
-        "username":  "szegvari",
-        "license":  "http://creativecommons.org/publicdomain/zero/1.0/",
-        "duration":  50.4267,
-        "freesound_url":  "https://freesound.org/people/szegvari/sounds/581367/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Ambience_Hell_02.wav.mp3",
-        "title":  "Ambience_Hell_02.wav",
-        "username":  "LittleRobotSoundFactory",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  35.0,
-        "freesound_url":  "https://freesound.org/people/LittleRobotSoundFactory/sounds/270437/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Ambience_Hell_01.wav.mp3",
-        "title":  "Ambience_Hell_01.wav",
-        "username":  "LittleRobotSoundFactory",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  26.5,
-        "freesound_url":  "https://freesound.org/people/LittleRobotSoundFactory/sounds/270438/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Ambience_Hell_00.wav.mp3",
-        "title":  "Ambience_Hell_00.wav",
-        "username":  "LittleRobotSoundFactory",
-        "license":  "https://creativecommons.org/licenses/by/4.0/",
-        "duration":  35.5,
-        "freesound_url":  "https://freesound.org/people/LittleRobotSoundFactory/sounds/270439/"
-    },
-    {
-        "folder":  "ritual",
-        "file":  "Sacrilege.mp3",
-        "title":  "Sacrilege",
-        "username":  "Aghnaman",
-        "license":  "https://creativecommons.org/licenses/by-nc/4.0/",
-        "duration":  232.0,
-        "freesound_url":  "https://freesound.org/people/Aghnaman/sounds/698719/"
-    }
+[
+  {
+    "file": "audio/Ambientes/Cavernas e Masmorras/Covil.mp3",
+    "title": "Horror Atmosphere 7_The Lair_Loop",
+    "author": "Ulrich_Wehner",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Ulrich_Wehner/sounds/736880/"
+  },
+  {
+    "file": "audio/Ambientes/Cavernas e Masmorras/Magia inquietante.mp3",
+    "title": "Magic - Unpleasant Tonal Ambience",
+    "author": "Vrymaa",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Vrymaa/sounds/825855/"
+  },
+  {
+    "file": "audio/Ambientes/Cavernas e Masmorras/Masmorra.mp3",
+    "title": "Dungeon Ambiance",
+    "author": "phlair",
+    "license": "http://creativecommons.org/licenses/by/3.0/",
+    "source": "https://freesound.org/people/phlair/sounds/388340/"
+  },
+  {
+    "file": "audio/Ambientes/Cavernas e Masmorras/Prisão da loucura.mp3",
+    "title": "AMBDsgn_Madness Prison.Ambience.Laughter.Screams.Footsteps.Cell Doors.Ceiling Leak.A Faulty Lamp.Electric Hum 1_EM",
+    "author": "newlocknew",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/newlocknew/sounds/841640/"
+  },
+  {
+    "file": "audio/Ambientes/Cavernas e Masmorras/Terror nas profundezas.mp3",
+    "title": "Noedell - Royalty FREE Horror/halloween Ambience",
+    "author": "Noedell",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Noedell/sounds/364221/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva com trovões na floresta à noite.mp3",
+    "title": "Amb_Forest_Thunder_Rain_Night_KA",
+    "author": "Kristoffer_Andersson",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Kristoffer_Andersson/sounds/728687/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva com trovões.mp3",
+    "title": "thunder_rain_longwav",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/519484/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva constante.mp3",
+    "title": "rain_ambiencewav",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/652407/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva e trovões (Tübingen).mp3",
+    "title": "Rain and Thunder Ambience TÃ¼bingen",
+    "author": "Sheyvan",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Sheyvan/sounds/369547/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva e trovões no pátio.mp3",
+    "title": "thunder_rain_courtyard",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/810880/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Chuva forte e granizo na janela.mp3",
+    "title": "heavy_rain_and_hail_on_window_during_light_thunderstorm",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/689960/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Glitter.mp3",
+    "title": "Glitter",
+    "author": "YellowTree",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/YellowTree/sounds/583860/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Goteiras no telhado da cidade.mp3",
+    "title": "RAIN_Eaves Drops.Melted Snow.Rain.Autumn.City Yard 5_EM",
+    "author": "newlocknew",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/newlocknew/sounds/710233/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Noite chuvosa com trovões e goteiras.mp3",
+    "title": "rainy_night_with_thunder_and_water_droppingwav",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/399682/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Ondulações na água.mp3",
+    "title": "Ripples 1.wav",
+    "author": "Owl",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Owl/sounds/387912/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Tempestade envolvente.mp3",
+    "title": "storm_surround_220701_0132wav",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/640370/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Tempestade forte.mp3",
+    "title": "thunderstorm_sound_fx",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/699907/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Tempestade longa.mp3",
+    "title": "thunderstorm_19th_of_may_2014",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/267277/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Tempestade nas dunas.mp3",
+    "title": "2014-06-16 thunderstorm at bruneau dunes.wav",
+    "author": "tim.kahn",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/tim.kahn/sounds/240871/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Trovoada de verão.mp3",
+    "title": "summer_thunder",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/810051/"
+  },
+  {
+    "file": "audio/Ambientes/Chuva e Tempestade/Trovões no campo com pássaros.mp3",
+    "title": "thunder_coutryside_spring_birds",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/736855/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Bosque ao entardecer.mp3",
+    "title": "evening woods 01 NL 151009_0806.flac",
+    "author": "klankbeeld",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/klankbeeld/sounds/324409/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Bosque de pinheiros.mp3",
+    "title": "pinewood_in_memoriam_febr_05_nl_giersbergen_33db_170215_1085flac",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/383506/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Estepe com vento.mp3",
+    "title": "Mongolian film windblown steppe1.wav",
+    "author": "Jim-Bretherick",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Jim-Bretherick/sounds/667115/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Floresta com sapos.mp3",
+    "title": "Frog Forest",
+    "author": "absent1010",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/absent1010/sounds/615001/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Floresta sombria com vento.mp3",
+    "title": "forest_birds_wind_dark_haunted_outdoor_eerie_atmo_atmosphere_cinematicwav",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/617747/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Floresta à noite.mp3",
+    "title": "forest_night_ambience_stereo_48khz_24bit_220_owi",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/708611/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Lago na floresta à noite.mp3",
+    "title": "Ambience: Forest Lake at Night",
+    "author": "Sheyvan",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Sheyvan/sounds/524287/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Mata à noite.mp3",
+    "title": "small_wood_at_night_close_to_rio_de_janeiro_on_the_way_to_pedra_bonita",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/410357/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Noite à beira do rio.mp3",
+    "title": "night_on_the_river.WAV",
+    "author": "WilliamDauricio",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/WilliamDauricio/sounds/658081/"
+  },
+  {
+    "file": "audio/Ambientes/Floresta e Campos/Pássaros ao entardecer (carros ao fundo).mp3",
+    "title": "Disturbance (racing cars) during evening birds recording on Dartmoor",
+    "author": "Philip_Goddard",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/Philip_Goddard/sounds/662487/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Mar calmo à noite.mp3",
+    "title": "250815_034144_PH_Calm_sea_at_night",
+    "author": "kevp888",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/kevp888/sounds/836484/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Oceano à noite.mp3",
+    "title": "Ocean Ambiance Night",
+    "author": "nick121087",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/nick121087/sounds/476886/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Ondas na costa.mp3",
+    "title": "Ocean Waves Crashing on the Coast of Big Lagoon, Redwoods",
+    "author": "CVLTIV8R",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/CVLTIV8R/sounds/803679/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Ondas na praia.mp3",
+    "title": "250730_061119_PH_Ocean_waves_at_White_Beach",
+    "author": "kevp888",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/kevp888/sounds/829448/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Ondas quebrando no oceano.mp3",
+    "title": "Crashing Waves - Pacific Ocean",
+    "author": "SecureSubset",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/SecureSubset/sounds/817075/"
+  },
+  {
+    "file": "audio/Ambientes/Mar e Porto/Ondas.mp3",
+    "title": "Waves.wav(es)",
+    "author": "BeneGe",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/BeneGe/sounds/346381/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Inferno 1.mp3",
+    "title": "Ambience_Hell_00.wav",
+    "author": "LittleRobotSoundFactory",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/LittleRobotSoundFactory/sounds/270439/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Inferno 2.mp3",
+    "title": "Ambience_Hell_01.wav",
+    "author": "LittleRobotSoundFactory",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/LittleRobotSoundFactory/sounds/270438/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Inferno 3.mp3",
+    "title": "Ambience_Hell_02.wav",
+    "author": "LittleRobotSoundFactory",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/LittleRobotSoundFactory/sounds/270437/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Ritual antigo.mp3",
+    "title": "Old ritual - Fantasy Background Soundscape Haunted Atmo Music Synth Drum Orchestra - Mastered.wav",
+    "author": "szegvari",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/szegvari/sounds/595853/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Ritual na floresta.mp3",
+    "title": "Forest Angel Ritual Dark Atmo.wav",
+    "author": "szegvari",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/szegvari/sounds/581367/"
+  },
+  {
+    "file": "audio/Ambientes/Rituais Sombrios/Sacrilégio.mp3",
+    "title": "Sacrilege",
+    "author": "Aghnaman",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/Aghnaman/sounds/698719/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Coro de insetos.mp3",
+    "title": "Anji Insect Chorus.wav",
+    "author": "RTB45",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/RTB45/sounds/156666/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Lamento assustador.mp3",
+    "title": "Freaky Wailing",
+    "author": "SnowFightStudios",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/SnowFightStudios/sounds/692002/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Monstro.mp3",
+    "title": "remix of 168947__audiorichter__monster.flac",
+    "author": "Timbre",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/Timbre/sounds/169347/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Mordidas de monstro.mp3",
+    "title": "monster_bites_FINAL_06192025",
+    "author": "Artninja",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Artninja/sounds/812556/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Rugido curto.mp3",
+    "title": "smok przyciÄty.WAV",
+    "author": "RafMOL",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/RafMOL/sounds/584734/"
+  },
+  {
+    "file": "audio/Criaturas/Dragão/Rugido de dragão.mp3",
+    "title": "Dragon roaring sound effect",
+    "author": "Mastersoundboy2005",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Mastersoundboy2005/sounds/713040/"
+  },
+  {
+    "file": "audio/Criaturas/Goblin/Grito aterrorizante.mp3",
+    "title": "terrifying scream.wav",
+    "author": "lodovico",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/lodovico/sounds/275170/"
+  },
+  {
+    "file": "audio/Criaturas/Goblin/Grunhidos e rosnados.mp3",
+    "title": "Pug Dog Grunts, Breaths, Snarls",
+    "author": "EpicWizard",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/EpicWizard/sounds/377001/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Gemidos e ataque de zumbi.mp3",
+    "title": "Classic Zombie moans and attack by Bernuy CC BY",
+    "author": "Bernuy",
+    "license": "http://creativecommons.org/licenses/by/3.0/",
+    "source": "https://freesound.org/people/Bernuy/sounds/415524/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Zumbi 1.mp3",
+    "title": "Zombie 02.wav",
+    "author": "Massivecarcrash",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Massivecarcrash/sounds/341525/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Zumbi 2.mp3",
+    "title": "Zombie 03.wav",
+    "author": "Massivecarcrash",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Massivecarcrash/sounds/341524/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Zumbi 3.mp3",
+    "title": "Zombie 05.wav",
+    "author": "Massivecarcrash",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Massivecarcrash/sounds/341529/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Zumbi 4.mp3",
+    "title": "Zombie 07.wav",
+    "author": "Massivecarcrash",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Massivecarcrash/sounds/341528/"
+  },
+  {
+    "file": "audio/Criaturas/Mortos-vivos/Zumbis (sem eco).mp3",
+    "title": "Zombie Sounds Effects (No Reverb).wav",
+    "author": "robert18productions",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/robert18productions/sounds/634697/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Cães de trenó.mp3",
+    "title": "StormKloud Sled Dogs.aif",
+    "author": "be-steele",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/be-steele/sounds/128240/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Cão pedindo comida.mp3",
+    "title": "Igor- I wan't dinner.wav",
+    "author": "be-steele",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/be-steele/sounds/128025/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Cão resmungando.mp3",
+    "title": "Mars Gets Combed",
+    "author": "be-steele",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/be-steele/sounds/718997/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Dragon Lines.mp3",
+    "title": "Dragon Lines (Many)",
+    "author": "SnowFightStudios",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/SnowFightStudios/sounds/669888/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Latidos.mp3",
+    "title": "bark.mp3",
+    "author": "saha213131",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/saha213131/sounds/692661/"
+  },
+  {
+    "file": "audio/Criaturas/Warg/Uivos distantes.mp3",
+    "title": "Dog howling from another room - Howls",
+    "author": "Iceofdoom",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Iceofdoom/sounds/667332/"
+  },
+  {
+    "file": "audio/Efeitos/Combate/Batalha de espadas.mp3",
+    "title": "Custom_ambient_sword_battle",
+    "author": "Artninja",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Artninja/sounds/753579/"
+  },
+  {
+    "file": "audio/Efeitos/Combate/Choque de lâminas.mp3",
+    "title": "shovel_hit_spade_mimicking_sword_clashing_sounds",
+    "author": "Artninja",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Artninja/sounds/725071/"
+  },
+  {
+    "file": "audio/Efeitos/Combate/Espada pesada.mp3",
+    "title": "custom_leo_heavy_sword_swing_reverse_doppler_ringouts_sounds_FINAL_12112024",
+    "author": "Artninja",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Artninja/sounds/777675/"
+  },
+  {
+    "file": "audio/Efeitos/Combate/Golpes de espada.mp3",
+    "title": "Custom_sword_hits_demonslayer_inspired_06152023_final_w_rattle.mp3",
+    "author": "Artninja",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Artninja/sounds/699991/"
+  },
+  {
+    "file": "audio/Efeitos/Combate/Metal batendo.mp3",
+    "title": "metal coffee cup clangs.flac",
+    "author": "breadparticles",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/breadparticles/sounds/657827/"
+  },
+  {
+    "file": "audio/Trilhas/Cultistas/Capela do sacrifício.mp3",
+    "title": "Chapel of sacrifice",
+    "author": "Victor_Natas",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Victor_Natas/sounds/616217/"
+  },
+  {
+    "file": "audio/Trilhas/Cultistas/Defensible Twister.mp3",
+    "title": "Defensible Twister",
+    "author": "Brazilio123",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Brazilio123/sounds/661435/"
+  },
+  {
+    "file": "audio/Trilhas/Cultistas/Tribo profana.mp3",
+    "title": "Satanic tribe",
+    "author": "Victor_Natas",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Victor_Natas/sounds/613098/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Algo não está certo.mp3",
+    "title": "23_somethings_not_right_dark_cinematic_drone",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/614485/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Atmosfera misteriosa.mp3",
+    "title": "DSGNDron_Atonal Mysterious Atmosphere 6_EM.wav",
+    "author": "newlocknew",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/newlocknew/sounds/652714/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Caverna encantada.mp3",
+    "title": "Enchanted cave",
+    "author": "xkeril",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/xkeril/sounds/714699/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Condenação.mp3",
+    "title": "Doomed Drone",
+    "author": "Soparnik",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Soparnik/sounds/786902/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone grave.mp3",
+    "title": "drone_15122015",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/332246/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 1.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_002_anton_bushins",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/776685/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 2.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_and_hf_resonance",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/777039/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 3.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_bass_synth_drone_with_huge_reverb_and_hi_frequency",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/776835/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 4.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_extremely_bass_drone_with_huge_reverb_and_hi_metall",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/777077/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 5.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_heavy_bass_drone_006_anton_bushinskiy_ab_fx",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/777335/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 6.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_heavy_bass_noisy_drone_007",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/779184/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Drone sombrio 7.mp3",
+    "title": "dsgndron_dark_sci_fi_ambient_synth_drone_with_huge_reverb_001_anton_bushinskiy_a",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/776586/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Fundo etéreo.mp3",
+    "title": "airy_pitched_background",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/742885/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Journey to the Interweb.mp3",
+    "title": "journey_to_the_interweb",
+    "author": "",
+    "license": "",
+    "source": "https://freesound.org/s/609250/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Respiração sinistra.mp3",
+    "title": "DSGNDron_Eerie Mysterious Breathing Ambience 1_EM.wav",
+    "author": "newlocknew",
+    "license": "https://creativecommons.org/licenses/by-nc/4.0/",
+    "source": "https://freesound.org/people/newlocknew/sounds/702784/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Rumo à forja.mp3",
+    "title": "Transition to the forge",
+    "author": "Kronek9",
+    "license": "http://creativecommons.org/publicdomain/zero/1.0/",
+    "source": "https://freesound.org/people/Kronek9/sounds/788070/"
+  },
+  {
+    "file": "audio/Trilhas/Tensão e Mistério/Terror iminente.mp3",
+    "title": "Ominous Horror Soundtrack",
+    "author": "Matio888",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "source": "https://freesound.org/people/Matio888/sounds/793486/"
+  }
 ]

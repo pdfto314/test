@@ -1,0 +1,42 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Ferramentas (sincronizar.py, gerar_playlist.py)
+        run: |
+          pip install --quiet mutagen
+          python -m unittest discover -s ferramentas/testes -v
+
+      - name: Gerar playlist.json (igual ao deploy)
+        run: python ferramentas/gerar_playlist.py
+
+      - name: Regras, hash do git e cofre do token (JavaScript)
+        run: node --test "tests/unit/*.test.mjs"
+
+      - name: App no navegador (Playwright + GitHub simulado)
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          node --test --test-concurrency=1 "tests/e2e/*.test.mjs"

@@ -1,0 +1,190 @@
+{
+  "scenes": [
+    {
+      "id": "floresta-noite",
+      "name": "Floresta à noite",
+      "icon": "🌲",
+      "ambients": [
+        "audio/Ambientes/Floresta e Campos/Floresta à noite.mp3",
+        "audio/Ambientes/Floresta e Campos/Noite à beira do rio.mp3"
+      ],
+      "spots": [
+        {
+          "url": "audio/Criaturas/Coruja/Coruja na noite.mp3",
+          "freq": "sometimes"
+        },
+        {
+          "url": "audio/Criaturas/Coruja/Coruja.mp3",
+          "freq": "rare"
+        }
+      ],
+      "trackVol": {
+        "audio/Ambientes/Floresta e Campos/Noite à beira do rio.mp3": 0.5
+      }
+    },
+    {
+      "id": "tempestade",
+      "name": "Tempestade",
+      "icon": "⛈️",
+      "ambients": [
+        "audio/Ambientes/Chuva e Tempestade/Tempestade forte.mp3",
+        "audio/Ambientes/Chuva e Tempestade/Chuva forte e granizo na janela.mp3"
+      ],
+      "spots": [],
+      "trackVol": {
+        "audio/Ambientes/Chuva e Tempestade/Chuva forte e granizo na janela.mp3": 0.6
+      }
+    },
+    {
+      "id": "masmorra",
+      "name": "Masmorra sombria",
+      "icon": "🗝️",
+      "ambients": [
+        "audio/Ambientes/Cavernas e Masmorras/Masmorra.mp3",
+        "audio/Ambientes/Cavernas e Masmorras/Caverna com pingos.mp3",
+        "audio/Trilhas/Tensão e Mistério/Drone grave.mp3"
+      ],
+      "spots": [
+        {
+          "url": "audio/Criaturas/Rato/Ratos.mp3",
+          "freq": "sometimes"
+        }
+      ],
+      "trackVol": {
+        "audio/Ambientes/Cavernas e Masmorras/Caverna com pingos.mp3": 0.7,
+        "audio/Trilhas/Tensão e Mistério/Drone grave.mp3": 0.4
+      }
+    },
+    {
+      "id": "cidade-noite",
+      "name": "Cidade à noite",
+      "icon": "🏰",
+      "ambients": [
+        "audio/Trilhas/Keep on the Borderlands/Cidade à noite.mp3"
+      ],
+      "spots": [],
+      "trackVol": {}
+    },
+    {
+      "id": "cidade-amanhecer",
+      "name": "Cidade ao amanhecer",
+      "icon": "🌅",
+      "ambients": [
+        "audio/Trilhas/Keep on the Borderlands/Cidade ao amanhecer.mp3"
+      ],
+      "spots": [],
+      "trackVol": {}
+    },
+    {
+      "id": "porto-noite",
+      "name": "Porto à noite",
+      "icon": "🌊",
+      "ambients": [
+        "audio/Ambientes/Mar e Porto/Mar calmo à noite.mp3",
+        "audio/Ambientes/Mar e Porto/Dentro do navio ou vila portuária.mp3"
+      ],
+      "spots": [],
+      "trackVol": {
+        "audio/Ambientes/Mar e Porto/Dentro do navio ou vila portuária.mp3": 0.6
+      }
+    },
+    {
+      "id": "exploracao",
+      "name": "Exploração tensa",
+      "icon": "🧭",
+      "ambients": [
+        "audio/Trilhas/Tensão e Mistério/Começo de aventura pelo desconhecido.mp3"
+      ],
+      "spots": [
+        {
+          "url": "audio/Trilhas/Tensão e Mistério/Passos de algo enorme.mp3",
+          "freq": "rare"
+        }
+      ],
+      "trackVol": {}
+    },
+    {
+      "id": "batalha",
+      "name": "Batalha!",
+      "icon": "⚔️",
+      "ambients": [
+        "audio/Trilhas/Batalha/Porrada.mp3",
+        "audio/Efeitos/Combate/Batalha de espadas.mp3"
+      ],
+      "spots": [],
+      "trackVol": {
+        "audio/Efeitos/Combate/Batalha de espadas.mp3": 0.6
+      }
+    },
+    {
+      "id": "labirinto",
+      "name": "Labirinto do Minotauro",
+      "icon": "🐂",
+      "ambients": [
+        "audio/Ambientes/Cavernas e Masmorras/Caverna com pingos 2.mp3",
+        "audio/Trilhas/Tensão e Mistério/Terror iminente.mp3"
+      ],
+      "spots": [
+        {
+          "url": "audio/Criaturas/Minotauro/Bufando.mp3",
+          "freq": "sometimes"
+        },
+        {
+          "url": "audio/Criaturas/Minotauro/Cheirando.mp3",
+          "freq": "sometimes"
+        },
+        {
+          "url": "audio/Criaturas/Minotauro/À espreita.mp3",
+          "freq": "rare"
+        }
+      ],
+      "trackVol": {
+        "audio/Trilhas/Tensão e Mistério/Terror iminente.mp3": 0.5
+      }
+    },
+    {
+      "id": "cripta",
+      "name": "Cripta dos mortos",
+      "icon": "🧟",
+      "ambients": [
+        "audio/Ambientes/Cavernas e Masmorras/Covil.mp3",
+        "audio/Trilhas/Tensão e Mistério/Respiração sinistra.mp3"
+      ],
+      "spots": [
+        {
+          "url": "audio/Criaturas/Mortos-vivos/Zumbi 4.mp3",
+          "freq": "rare"
+        }
+      ],
+      "trackVol": {
+        "audio/Trilhas/Tensão e Mistério/Respiração sinistra.mp3": 0.5
+      }
+    },
+    {
+      "id": "covil-aranha",
+      "name": "Covil da aranha",
+      "icon": "🕷️",
+      "ambients": [
+        "audio/Criaturas/Aranha/Música do covil.mp3",
+        "audio/Ambientes/Cavernas e Masmorras/Caverna com pingos.mp3"
+      ],
+      "spots": [],
+      "trackVol": {
+        "audio/Ambientes/Cavernas e Masmorras/Caverna com pingos.mp3": 0.5
+      }
+    },
+    {
+      "id": "ritual",
+      "name": "Ritual profano",
+      "icon": "🔮",
+      "ambients": [
+        "audio/Ambientes/Rituais Sombrios/Inferno 1.mp3",
+        "audio/Ambientes/Rituais Sombrios/Ritual antigo.mp3"
+      ],
+      "spots": [],
+      "trackVol": {
+        "audio/Ambientes/Rituais Sombrios/Ritual antigo.mp3": 0.7
+      }
+    }
+  ]
+}
