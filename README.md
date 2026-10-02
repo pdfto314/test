@@ -1,20 +1,27 @@
 # 🎲 Jogatina Soundboard
 
-Soundboard de mesa de RPG feito para o **iPad**: ambientes em loop, efeitos, trilhas e cenas.
+Soundboard de mesa de RPG feito para o **iPad**: ambientes, trilhas, criaturas e efeitos, com cenas prontas e sons que tocam sozinhos.
 
 ## Usar no iPad
 
-1. Abra o site no Safari e toque em **Compartilhar → Adicionar à Tela de Início** (abre em tela cheia, como app).
-2. Toque em **Começar** (o iPad só libera áudio depois de um toque) ou **Continuar cena anterior**.
-3. Escolha um tema na lateral (ou na faixa de cima, com o iPad em pé):
-   - 🟧 **Ambiente** (sons longos): toque liga/desliga o loop, com fade.
-   - 🟦 **Efeito** (sons de até 20 s): toque toca uma vez.
-   - O botão do canto faz o contrário (efeito em loop, ou ambiente uma vez só).
-4. Embaixo, em **Tocando**, ajuste o volume de cada som ou pare com ✕. *Ambiente* e *Efeitos* são o volume geral de cada tipo.
-5. **🎬 Cenas**: salve o que está tocando (ex.: “Taverna chuvosa”) e troque de cena com transição suave.
-6. **🔎 Busca** procura em todos os temas; **🕘 Recentes** guarda os últimos sons tocados; **ⓘ** mostra os créditos.
+1. Abra o site no Safari → **Compartilhar → Adicionar à Tela de Início** (abre em tela cheia, como app).
+2. Toque em **Começar a sessão** (ou **Continuar cena anterior**).
+3. Na tela **Início** escolha uma **cena pronta** (Floresta à noite, Masmorra sombria, Tempestade…) ou abra um tema.
 
-A tela fica acesa enquanto tiver som tocando.
+| Gesto | O que faz |
+| --- | --- |
+| **Toque** num ambiente (∞) | liga/desliga o loop, com fade |
+| **Toque** num efeito (⚡, até 20 s) | toca uma vez |
+| Botão do canto do card | o contrário (efeito em loop / ambiente 1×) |
+| **Segurar** um som (ou clique direito no PC) | painel com loop, 1×, **🎲 aleatório**, volume, ⭐ favorito e ✏️ editar |
+
+- **🎲 Aleatório**: o som toca sozinho de tempos em tempos (frequente, às vezes ou raro) — uma coruja na floresta, passos na masmorra.
+- **🎬 Cenas**: guardam ambientes + aleatórios + volumes; trocar de cena faz transição suave. As **compartilhadas** (em `cenas.json`) aparecem em todos os aparelhos.
+- **Uma trilha por vez**: ao tocar uma música de *Trilhas*, a anterior sai com fade (desligável em ⚙️ Ajustes).
+- **🎲 Surpresa** em cada tema toca um efeito aleatório daquele tema.
+- **⭐ Favoritos**, **🕘 Recentes** e **🔎 busca** (sons, temas e cenas).
+- Embaixo, **Tocando** mostra tudo que está ativo com volume individual, visualizador e **Parar tudo**.
+- A tela fica acesa enquanto houver som tocando.
 
 ## Organização dos sons
 
@@ -26,30 +33,42 @@ audio/
   Efeitos/     Combate
 ```
 
-Cada pasta `audio/<Grupo>/<Tema>/` vira um tema no app, e **o nome do arquivo é o nome do som**.
+Cada pasta `audio/<Grupo>/<Tema>/` vira um tema; **o nome do arquivo é o nome do som**; sons de até 20 s viram efeitos.
 
-## Adicionar sons
+## Gerenciar pelo iPad
 
-**Pelo iPad (ou navegador do PC):** toque em **＋ Sons**, escolha o tema (ou crie um novo), selecione os arquivos e envie.
-Na primeira vez, conecte com um token do GitHub — as instruções aparecem na tela:
-GitHub → Settings → Developer settings → *Fine-grained tokens* → *Generate new token* →
-*Only select repositories* (este) → *Permissions → Contents: Read and write*.
-O token fica salvo só naquele aparelho. Os sons aparecem em ~1 minuto.
+Conecte uma vez em **⚙️ Ajustes → GitHub** com um token
+(GitHub → Settings → Developer settings → *Fine-grained tokens* → *Only select repositories* (este) → *Contents: Read and write*).
+O token fica salvo só naquele aparelho. Depois:
 
-**Pelo PC (git):** coloque os arquivos em `audio/<Grupo>/<Tema>/` e faça commit + push na `main`.
-O GitHub Action (`.github/workflows/playlist.yml`) atualiza o `playlist.json` sozinho — depois rode `git pull`.
+- **＋ Sons**: envia áudios para um tema existente ou cria tema/grupo novo.
+- **Segurar um som → ✏️ Editar**: renomeia, move para outro tema ou remove (cenas e créditos são atualizados junto).
+- **🎬 Cenas → Compartilhar**: salva a cena para todos os aparelhos.
+
+Cada ação vira um commit; o GitHub Pages publica em ~1 minuto.
+
+## Pelo PC (git)
+
+Coloque arquivos em `audio/<Grupo>/<Tema>/` e faça commit + push na `main`. O GitHub Action
+(`.github/workflows/playlist.yml`) atualiza o `playlist.json` sozinho — depois rode `git pull`.
 Se o Action falhar ao dar push: *Settings → Actions → General → Workflow permissions → Read and write permissions*.
-
-Formatos aceitos: mp3, m4a, wav, ogg.
 
 ## Arquivos
 
 | Arquivo | Para quê |
 | --- | --- |
-| `index.html`, `style.css`, `app.js` | o app |
-| `upload.js` | envio de sons pelo app (＋ Sons) |
+| `index.html`, `style.css` | página e visual |
+| `js/app.js` | telas, navegação, painel do som, barra “Tocando” |
+| `js/engine.js` | motor de áudio (Web Audio: volumes, fades, aleatórios, visualizador) |
+| `js/library.js` | biblioteca, favoritos, recentes, créditos |
+| `js/scenes.js` | cenas (do aparelho e compartilhadas) |
+| `js/manage.js` | enviar / renomear / mover / remover sons |
+| `js/github.js` | conexão e commits no GitHub |
+| `js/util.js` | cores e ícones dos temas, utilidades |
 | `playlist.json` | lista de sons (gerada; não precisa editar) |
-| `credits.json` | autores e licenças dos sons do Freesound |
-| `renomeados.json` | caminhos antigos → novos (atualiza cenas salvas no aparelho) |
-| `ferramentas/gerar_playlist.py` | gera o `playlist.json` (`python ferramentas/gerar_playlist.py`) |
-| `ferramentas/*.bat`, `*.ps1` | Windows: gerar playlist e baixar sons do Freesound |
+| `cenas.json` | cenas compartilhadas |
+| `credits.json` | autores e licenças dos sons do Freesound (ⓘ Créditos no app) |
+| `renomeados.json` | caminhos antigos → novos (atualiza dados salvos no aparelho) |
+| `ferramentas/` | `gerar_playlist.py` e scripts do Windows (gerar playlist, baixar do Freesound) |
+
+Formatos aceitos: mp3, m4a, wav, ogg.
