@@ -12,7 +12,7 @@ import {
 import * as engine from "./engine.js";
 import { SPOT_FREQS } from "./engine.js";
 import { allScenes, loadShared, setSharedData, fixLocalUrls, initScenes, applyScene, isActive, sceneHue, sceneSummary, onScenesChange } from "./scenes.js";
-import { isConnected, renderConnect } from "./github.js";
+import { renderConnect, initAuthUi } from "./github.js";
 import { initManage } from "./manage.js";
 
 const VIEW_HOME = "home", VIEW_FAVS = "favs", VIEW_RECENT = "recent";
@@ -449,12 +449,6 @@ function renderSoundSheet(){
     if (view === VIEW_FAVS || view === VIEW_HOME) renderMain(); else syncTiles();
   });
   q("[data-edit]").addEventListener("click", () => {
-    if (!isConnected()){
-      toast("Conecte ao GitHub em ⚙️ Ajustes para editar a biblioteca.", 3500);
-      els.soundDlg.close();
-      openSettings();
-      return;
-    }
     els.soundDlg.close();
     manage.openEdit({ url, file: it.file, title: it.title, themeKey: t.key });
   });
@@ -632,8 +626,23 @@ engine.onChange(() => {
 onScenesChange(() => { if (view === VIEW_HOME && !query) renderMain(); });
 
 /* ======================= biblioteca: carregar / mudanças pelo app ======================= */
+/* mantém na lista os sons enviados que o site ainda não publicou */
+function withPending(list){
+  if (!pending.size) return list;
+  const have = new Set(list.flatMap(t => (t.items || []).map(i => i.url)));
+  const missing = [...pending].filter(u => !have.has(u) && lib.byUrl.has(u));
+  if (!missing.length) return list;
+  const out = list.map(t => ({ ...t, items: [...(t.items || [])] }));
+  for (const u of missing){
+    const { item, theme } = lib.byUrl.get(u);
+    let t = out.find(x => x.name === theme.name && (x.group ?? "") === theme.group);
+    if (!t){ t = { name: theme.name, group: theme.group, items: [] }; out.push(t); }
+    t.items.push({ ...item });
+  }
+  return out;
+}
 function applyLibrary(list){
-  setLibrary(list);
+  setLibrary(withPending(list));
   if (![VIEW_HOME, VIEW_FAVS, VIEW_RECENT].includes(view) && !lib.themes.some(t => t.key === view)) view = VIEW_HOME;
   renderNav();
   renderMain();
@@ -676,7 +685,7 @@ function waitForPublish(urls){
         return;
       }
     }catch{}
-    if (tries < 20) setTimeout(check, 15000);
+    if (tries < 40) setTimeout(check, 15000);   // até ~10 min
     else{ for (const u of urls) pending.delete(u); syncTiles(); }
   };
   setTimeout(check, 20000);
@@ -773,12 +782,16 @@ async function init(){
   });
 
   for (const id of ["settingsDlg", "creditsDlg"]) wireDialog($(id));
+  initAuthUi();
   renderConnect($("settingsConnect"));
+  document.addEventListener("jogatina:open-settings", openSettings);
   scenesUi = initScenes({ setMasters });
   manage = initManage({
     getThemes: () => lib.themes.map(t => ({ group: t.group, name: t.name, key: t.key })),
     getGroups: () => sortedGroups().filter(Boolean),
     getCurrentTheme: () => view,
+    getPlaylist: () => ({ themes: lib.themes.map(t => ({ name: t.name, group: t.group, count: t.items.length, items: t.items.map(i => ({ ...i })) })) }),
+    openSettings,
     onLibraryChanged,
   });
 

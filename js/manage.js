@@ -1,95 +1,21 @@
-/* Gerenciar a biblioteca pelo app: enviar, renomear, mover e remover sons.
-   Cada ação vira um único commit com os áudios + playlist.json (e credits.json / cenas.json
-   quando o som aparece neles). O playlist.json segue as mesmas regras do
-   ferramentas/gerar_playlist.py, então o GitHub Action não precisa reescrevê-lo. */
+/* Gerenciar a biblioteca direto do aparelho, pela API do GitHub (sem git, sem pull):
+   - enviar arquivos ou pastas inteiras (pastas viram grupo/tema)
+   - sons repetidos são detectados pelo hash do git e não são reenviados
+   - renomear, mover e remover sons (credits.json e cenas.json acompanham)
+   Cada ação é um único commit. O playlist.json é gerado no deploy (GitHub Action);
+   aqui a interface só se atualiza localmente até o site publicar. */
 import { $, escapeHtml, toast, wireDialog, displayTitle, plural } from "./util.js";
-import { commit, createBlob, readRepoJson, listDir, jsonText, explainError, isConnected, renderConnect, onAuthChange } from "./github.js";
+import {
+  AUDIO_DIR, MAX_BYTES, themeDir, ensureTheme, locate, normalizePlaylist, makeItem, cleanName, extOf, cleanFileName,
+  uniqueName, validName, isAudioName, destinationFor, gitBlobSha, bytesToBase64, roundDuration, stem, fixCredits, fixScenes,
+} from "./rules.js";
+import { commit, createBlob, readRepoJson, listTree, jsonText, explainError, authState, requireAuth, gh, repoPath, BRANCH } from "./github.js";
 
-const AUDIO_DIR = "audio";
-const EXT_OK = [".mp3", ".wav", ".ogg", ".m4a", ".mpeg"];
-const MAX_BYTES = 95 * 1024 * 1024;   // limite do GitHub é 100 MB por arquivo
-
-/* ---------- regras do playlist.json (iguais às do gerar_playlist.py) ---------- */
-const niceTitle = (fileName) => fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
-const sortKey = (text) => String(text).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-const stem = (name) => name.replace(/\.[^.]+$/, "");
-function compare(a, b){
-  for (let i = 0; i < a.length; i++){
-    if (a[i] < b[i]) return -1;
-    if (a[i] > b[i]) return 1;
-  }
-  return 0;
-}
-const roundDuration = (seconds) => Math.round(seconds * 10) / 10;
-
-function themeDir(group, name){
-  return [AUDIO_DIR, group, ...name.split(" / ")].filter(Boolean).join("/");
-}
-function findTheme(playlist, group, name){
-  return playlist.themes.find(t => (t.group ?? "") === group && t.name === name);
-}
-function ensureTheme(playlist, group, name){
-  let entry = findTheme(playlist, group, name);
-  if (!entry){
-    entry = { name, group, count: 0, items: [] };
-    playlist.themes.push(entry);
-  }
-  return entry;
-}
-function normalizePlaylist(playlist){
-  playlist.themes = playlist.themes.filter(t => t.items.length > 0);
-  for (const t of playlist.themes){
-    t.items.sort((a, b) => compare([sortKey(stem(a.file)), sortKey(a.file)], [sortKey(stem(b.file)), sortKey(b.file)]));
-    t.count = t.items.length;
-  }
-  playlist.themes.sort((a, b) => compare([sortKey(a.group ?? ""), sortKey(a.name)], [sortKey(b.group ?? ""), sortKey(b.name)]));
-  playlist.generated = new Date().toISOString().slice(0, 19);
-  return playlist;
-}
-function locate(playlist, url){
-  for (const t of playlist.themes){
-    const i = t.items.findIndex(it => it.url === url);
-    if (i >= 0) return { theme: t, index: i, item: t.items[i] };
-  }
-  return null;
-}
-
-/* ---------- nomes de arquivo ---------- */
-function cleanName(name){
-  return String(name).normalize("NFC")
-    .replace(/[\\/:*?"<>|#%\u0000-\u001f]+/g, "_")   // # e % quebram URLs relativas
-    .replace(/\s+/g, " ")
-    .trim();
-}
-function extOf(name){
-  const i = name.lastIndexOf(".");
-  return i > 0 ? name.slice(i).toLowerCase() : "";
-}
-function cleanFileName(name){
-  const clean = cleanName(name);
-  const ext = extOf(clean);
-  const base = clean.slice(0, clean.length - ext.length).trim() || "som";
-  return base.slice(0, 100) + ext;
-}
-function uniqueName(name, taken){
-  const ext = extOf(name);
-  const base = name.slice(0, name.length - ext.length);
-  let candidate = name, n = 2;
-  while (taken.has(candidate.toLowerCase())) candidate = `${base} (${n++})${ext}`;
-  taken.add(candidate.toLowerCase());
-  return candidate;
-}
-const validName = (s) => s && !/^\.+$/.test(s);
+const dirOf = (p) => p.slice(0, p.lastIndexOf("/"));
+const baseOf = (p) => p.slice(p.lastIndexOf("/") + 1);
 const formatSize = (bytes) => bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const destKey = (d) => `${d.group}/${d.name}`;
 
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result).split(",")[1] || "");
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-}
 function readDuration(file){
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
@@ -104,34 +30,28 @@ function readDuration(file){
   });
 }
 
-/* referências a um som em credits.json / cenas.json (para manter tudo consistente) */
-function fixCredits(credits, oldUrl, newUrl){
-  if (!Array.isArray(credits)) return false;
-  let changed = false;
-  for (let i = credits.length - 1; i >= 0; i--){
-    if (credits[i].file !== oldUrl) continue;
-    changed = true;
-    if (newUrl) credits[i].file = newUrl; else credits.splice(i, 1);
-  }
-  return changed;
-}
-function fixScenes(data, oldUrl, newUrl){
-  if (!Array.isArray(data?.scenes)) return false;
-  let changed = false;
-  for (const s of data.scenes){
-    const before = JSON.stringify(s);
-    s.ambients = (s.ambients || []).flatMap(u => u === oldUrl ? (newUrl ? [newUrl] : []) : [u]);
-    s.spots = (s.spots || []).flatMap(x => x.url === oldUrl ? (newUrl ? [{ ...x, url: newUrl }] : []) : [x]);
-    if (s.trackVol && oldUrl in s.trackVol){
-      if (newUrl) s.trackVol[newUrl] = s.trackVol[oldUrl];
-      delete s.trackVol[oldUrl];
+/* lê pastas soltas no "arrastar e soltar" (PC), mantendo o caminho relativo */
+async function filesFromDrop(dataTransfer){
+  const out = [];
+  const entries = [...(dataTransfer?.items || [])].map(i => i.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...(dataTransfer?.files || [])].map(file => ({ file, rel: file.name }));
+  const walk = async (entry) => {
+    if (entry.isFile){
+      const file = await new Promise((res, rej) => entry.file(res, rej));
+      out.push({ file, rel: entry.fullPath.replace(/^\//, "") });
+    }else if (entry.isDirectory){
+      const reader = entry.createReader();
+      for (;;){
+        const batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        if (!batch.length) break;
+        for (const e of batch) await walk(e);
+      }
     }
-    if (JSON.stringify(s) !== before) changed = true;
-  }
-  return changed;
+  };
+  for (const e of entries) await walk(e);
+  return out;
 }
 
-/* ---------- opções de tema (selects com grupos) ---------- */
 function themeOptions(themes, selectedKey, withNew){
   const groups = [...new Set(themes.map(t => t.group))];
   return groups.map(g => `
@@ -140,10 +60,15 @@ function themeOptions(themes, selectedKey, withNew){
     </optgroup>`).join("") + (withNew ? `<option value="__new">➕ Novo tema…</option>` : "");
 }
 
-export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryChanged }){
-  /* ======================= ENVIAR SONS ======================= */
+const STATUS = {
+  waiting: ["⏳", "na fila"], reading: ["🔎", "verificando…"], uploading: ["⬆️", "enviando…"], ready: ["✔️", "pronto"],
+  done: ["✅", "enviado"], dup: ["⏭️", "já existe"], error: ["⚠️", "erro"],
+};
+
+export function initManage({ getThemes, getGroups, getCurrentTheme, getPlaylist, onLibraryChanged, openSettings }){
+  /* ======================= ENVIAR ======================= */
   const dlg = $("uploadDlg");
-  const connectBox = $("uploadConnect");
+  const needAuth = $("uploadNeedAuth");
   const form = $("uploadForm");
   const themeSelect = $("themeSelect");
   const newThemeBox = $("newThemeBox");
@@ -153,21 +78,24 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
   const newThemeInput = $("newThemeInput");
   const dropZone = $("dropZone");
   const fileInput = $("fileInput");
+  const folderInput = $("folderInput");
+  const folderBtn = $("folderBtn");
   const fileList = $("fileList");
   const sendBtn = $("sendBtn");
   const statusEl = $("uploadStatus");
+  const bar = $("uploadBar");
   wireDialog(dlg);
-  renderConnect(connectBox, { compact: false });
+  $("uploadOpenSettings").addEventListener("click", () => { dlg.close(); openSettings(); });
+  if (!("webkitdirectory" in document.createElement("input"))) folderBtn.hidden = true;   // iPad: sem seleção de pasta
 
-  let files = [];
+  let entries = [];       // { id, file, rel, status, note }
   let busy = false;
+  let nextId = 1;
 
   const setStatus = (msg, kind = "") => { statusEl.textContent = msg; statusEl.className = `uploadStatus ${kind}`; };
+  const setBar = (frac) => { bar.hidden = frac == null; bar.firstElementChild.style.width = `${Math.round((frac || 0) * 100)}%`; };
 
-  function showView(){
-    connectBox.hidden = isConnected();
-    form.hidden = !isConnected();
-    if (!isConnected()) return;
+  function fillSelects(){
     const themes = getThemes();
     const current = getCurrentTheme();
     themeSelect.innerHTML = themeOptions(themes, themes.some(t => t.key === current) ? current : themes[0]?.key, true);
@@ -176,13 +104,13 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
       `<option value="__new">➕ Novo grupo…</option>`;
     syncNewFields();
   }
-  onAuthChange(() => { if (dlg.open) showView(); });
-
   function syncNewFields(){
     newThemeBox.hidden = themeSelect.value !== "__new";
     newGroupField.hidden = newThemeBox.hidden || groupSelect.value !== "__new";
+    renderFiles();
   }
 
+  /* tema escolhido no formulário (para arquivos soltos); null se faltar nome */
   function chosenTarget(){
     if (themeSelect.value !== "__new"){
       const t = getThemes().find(x => x.key === themeSelect.value);
@@ -193,84 +121,143 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
     if (!validName(name) || (groupSelect.value === "__new" && !validName(group))) return null;
     return { group, name };
   }
+  const fallbackTarget = () => chosenTarget() ?? { group: groupSelect.value === "__new" ? cleanName(newGroupInput.value) : (getThemes().find(x => x.key === themeSelect.value)?.group ?? ""), name: "" };
 
   function renderFiles(){
+    const existing = new Set(getThemes().map(t => t.key));
+    const groups = new Map();
+    for (const e of entries){
+      const d = destinationFor(e.rel, fallbackTarget());
+      const k = destKey(d);
+      if (!groups.has(k)) groups.set(k, { d, items: [] });
+      groups.get(k).items.push(e);
+    }
     fileList.innerHTML = "";
-    files.forEach((f, i) => {
-      const li = document.createElement("li");
-      li.innerHTML = `<span>${escapeHtml(f.name)}</span><span>${formatSize(f.size)}</span><button type="button" class="linkBtn" aria-label="Tirar da lista">✕</button>`;
-      li.querySelector("button").addEventListener("click", () => { files.splice(i, 1); renderFiles(); });
-      fileList.appendChild(li);
-    });
-    sendBtn.disabled = busy || files.length === 0;
-    sendBtn.textContent = files.length > 1 ? `Enviar ${files.length} sons` : "Enviar";
+    for (const { d, items } of groups.values()){
+      const head = document.createElement("li");
+      head.className = "fileGroup";
+      head.innerHTML = `📁 ${escapeHtml(d.group || "Outros")} / ${escapeHtml(d.name || "(escolha o tema)")}${existing.has(destKey(d)) ? "" : ` <span class="newTag">novo</span>`}`;
+      fileList.appendChild(head);
+      for (const e of items){
+        const [icon, label] = STATUS[e.status];
+        const li = document.createElement("li");
+        li.className = `fileItem ${e.status}`;
+        li.innerHTML = `<span class="fiIcon">${icon}</span><span class="fiName">${escapeHtml(baseOf(e.rel))}</span><span class="fiNote">${escapeHtml(e.note || (e.status === "waiting" ? formatSize(e.file.size) : label))}</span>${busy || e.status === "done" ? "" : `<button type="button" class="linkBtn" aria-label="Tirar da lista">✕</button>`}`;
+        li.querySelector("button")?.addEventListener("click", () => { entries = entries.filter(x => x !== e); renderFiles(); });
+        fileList.appendChild(li);
+      }
+    }
+    const pendingCount = entries.filter(e => e.status !== "done" && e.status !== "dup").length;
+    sendBtn.disabled = busy || pendingCount === 0;
+    sendBtn.textContent = busy ? "Enviando…" : pendingCount > 1 ? `Enviar ${pendingCount} sons` : "Enviar";
   }
 
   function addFiles(list){
     const rejected = [];
-    for (const f of list){
-      if (!EXT_OK.includes(extOf(f.name))) rejected.push(`${f.name} (formato)`);
-      else if (f.size > MAX_BYTES) rejected.push(`${f.name} (muito grande)`);
-      else files.push(f);
+    for (const { file, rel } of list){
+      if (baseOf(rel).startsWith(".")) continue;
+      if (!isAudioName(file.name)){ rejected.push(`${file.name} (formato)`); continue; }
+      if (file.size > MAX_BYTES){ rejected.push(`${file.name} (maior que 95 MB)`); continue; }
+      if (entries.some(e => e.rel === rel && e.file.size === file.size)) continue;
+      entries.push({ id: nextId++, file, rel, status: "waiting", note: "" });
     }
-    if (rejected.length) toast(`Ignorado: ${rejected.join(", ")}`, 4000);
+    if (rejected.length) toast(`Ignorado: ${rejected.slice(0, 4).join(", ")}${rejected.length > 4 ? "…" : ""}`, 4500);
     setStatus("");
+    setBar(null);
     renderFiles();
   }
 
   async function send(e){
     e.preventDefault();
-    if (busy || files.length === 0) return;
-    const target = chosenTarget();
-    if (!target){
-      (newThemeInput.value.trim() ? newGroupInput : newThemeInput).focus();
-      toast("Dê um nome para o tema (e para o grupo, se for novo).");
+    const todo = entries.filter(x => x.status !== "done" && x.status !== "dup");
+    if (busy || !todo.length) return;
+    const fb = fallbackTarget();
+    if (todo.some(x => !destinationFor(x.rel, fb).name)){
+      newThemeInput.focus();
+      toast("Escolha o tema (ou dê nome ao tema novo).");
       return;
     }
+    if (!(await requireAuth())) return;
 
     busy = true;
     renderFiles();
+    const totalBytes = todo.reduce((n, x) => n + x.file.size, 0) || 1;
+    let doneBytes = 0;
+    setBar(0);
     try{
-      // 1) sobe cada arquivo (independe do estado da branch)
-      const blobs = [];
-      for (const [i, f] of files.entries()){
-        setStatus(`Enviando ${i + 1}/${files.length}: ${f.name}…`);
-        const [content, duration] = await Promise.all([fileToBase64(f), readDuration(f)]);
-        blobs.push({ name: cleanFileName(f.name), sha: await createBlob(content), duration });
+      // 1) o que já existe no repositório (para pular repetidos)
+      setStatus("Lendo o repositório…");
+      const ref = await gh(`${repoPath}/git/ref/heads/${BRANCH}`);
+      const base = await gh(`${repoPath}/git/commits/${ref.object.sha}`);
+      const remoteBySha = new Map((await listTree(base.tree.sha)).filter(f => f.path.startsWith(AUDIO_DIR + "/")).map(f => [f.sha, f.path]));
+      const batchShas = new Map();
+
+      // 2) cada arquivo: hash → pula se repetido → sobe o blob
+      for (const [i, x] of todo.entries()){
+        x.status = "reading"; x.note = ""; renderFiles();
+        setStatus(`Arquivo ${i + 1} de ${todo.length}: ${x.file.name}`);
+        const bytes = new Uint8Array(await x.file.arrayBuffer());
+        const sha = await gitBlobSha(bytes);
+        const already = remoteBySha.get(sha) || batchShas.get(sha);
+        if (already){
+          x.status = "dup";
+          x.note = `já existe: ${displayTitle(baseOf(already).replace(/\.[^.]+$/, ""))}`;
+        }else{
+          x.status = "uploading"; renderFiles();
+          const [blobSha, duration] = await Promise.all([createBlob(bytesToBase64(bytes)), readDuration(x.file)]);
+          x.blobSha = blobSha;
+          x.duration = duration;
+          x.status = "ready";
+          batchShas.set(sha, x.rel);
+        }
+        doneBytes += x.file.size;
+        setBar(doneBytes / totalBytes);
+        renderFiles();
       }
 
-      // 2) um commit com os arquivos + playlist.json
+      const ready = todo.filter(x => x.status === "ready");
+      if (!ready.length){
+        setStatus("Nada novo: todos esses sons já estão na biblioteca.", "ok");
+        return;
+      }
+
+      // 3) um commit com todos os arquivos (nomes livres conferidos na versão mais nova)
       setStatus("Salvando no repositório…");
-      const result = await commit(async (head) => {
-        const playlist = await readRepoJson("playlist.json", head, { themes: [] });
-        const entry = ensureTheme(playlist, target.group, target.name);
-        const taken = new Set(entry.items.map(i => String(i.file).toLowerCase()));
-        const dir = themeDir(target.group, target.name);
-        const tree = [], urls = [];
-        for (const b of blobs){
-          const name = uniqueName(b.name, taken);
+      const placed = await commit(async ({ treeSha }) => {
+        const files = await listTree(treeSha);
+        const takenByDir = new Map();
+        const taken = (dir) => {
+          if (!takenByDir.has(dir)) takenByDir.set(dir, new Set(files.filter(f => dirOf(f.path) === dir).map(f => baseOf(f.path).toLowerCase())));
+          return takenByDir.get(dir);
+        };
+        const tree = [], out = [];
+        for (const x of ready){
+          const d = destinationFor(x.rel, fb);
+          const dir = themeDir(d.group, d.name);
+          const name = uniqueName(cleanFileName(baseOf(x.rel)), taken(dir));
           const path = `${dir}/${name}`;
-          tree.push({ path, sha: b.sha });
-          const item = { title: niceTitle(name), file: name, url: path };
-          if (b.duration != null) item.duration = b.duration;
-          entry.items.push(item);
-          urls.push(path);
+          tree.push({ path, sha: x.blobSha });
+          out.push({ x, d, path });
         }
-        normalizePlaylist(playlist);
-        tree.push({ path: "playlist.json", content: jsonText(playlist) });
-        const where = target.group ? `${target.group}/${target.name}` : target.name;
-        const message = blobs.length === 1 ? `Adiciona som em ${where}: ${blobs[0].name}` : `Adiciona ${blobs.length} sons em ${where}`;
-        return { tree, message, result: { playlist, urls } };
+        const dests = [...new Set(out.map(o => o.d.group ? `${o.d.group}/${o.d.name}` : o.d.name))];
+        const message = out.length === 1 ? `Adiciona som em ${dests[0]}: ${baseOf(out[0].path)}` : `Adiciona ${out.length} sons em ${dests.join(", ")}`;
+        return { tree, message, result: out };
       });
 
-      files = [];
-      fileInput.value = "";
-      newThemeInput.value = "";
-      newGroupInput.value = "";
-      setStatus("Enviado ✓ Os sons aparecem em ~1 minuto.", "ok");
-      onLibraryChanged(result.playlist, { pending: result.urls, openKey: `${target.group}/${target.name}` });
-      toast(`Enviado ✓ publicando ${plural(result.urls.length, "som", "sons")}…`, 4000);
+      for (const { x } of placed){ x.status = "done"; x.note = ""; }
+      renderFiles();
+      setBar(1);
+
+      // 4) a interface já mostra os sons novos ("publicando…" até o site atualizar)
+      const playlist = getPlaylist();
+      for (const { x, d, path } of placed) ensureTheme(playlist, d.group, d.name).items.push(makeItem(path, x.duration));
+      normalizePlaylist(playlist);
+      const dupCount = todo.filter(x => x.status === "dup").length;
+      setStatus(`Enviado ✓ ${plural(placed.length, "som novo", "sons novos")}${dupCount ? ` · ${plural(dupCount, "repetido pulado", "repetidos pulados")}` : ""}. O site publica em 1–3 min.`, "ok");
+      onLibraryChanged(playlist, { pending: placed.map(p => p.path), openKey: destKey(placed[0].d) });
+      toast(`⬆️ ${plural(placed.length, "som enviado", "sons enviados")} — publicando…`, 4000);
     }catch(err){
+      for (const x of todo) if (x.status === "reading" || x.status === "uploading"){ x.status = "error"; x.note = "falhou"; }
       setStatus(`Não foi possível enviar: ${explainError(err)}.`, "err");
     }finally{
       busy = false;
@@ -281,12 +268,16 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
   form.addEventListener("submit", send);
   themeSelect.addEventListener("change", () => { syncNewFields(); if (!newThemeBox.hidden) newThemeInput.focus(); });
   groupSelect.addEventListener("change", () => { syncNewFields(); if (!newGroupField.hidden) newGroupInput.focus(); });
-  fileInput.addEventListener("change", () => { addFiles([...fileInput.files]); fileInput.value = ""; });
+  newThemeInput.addEventListener("input", renderFiles);
+  newGroupInput.addEventListener("input", renderFiles);
+  fileInput.addEventListener("change", () => { addFiles([...fileInput.files].map(file => ({ file, rel: file.name }))); fileInput.value = ""; });
+  folderInput.addEventListener("change", () => { addFiles([...folderInput.files].map(file => ({ file, rel: file.webkitRelativePath || file.name }))); folderInput.value = ""; });
+  folderBtn.addEventListener("click", (e) => { e.preventDefault(); folderInput.click(); });
   for (const ev of ["dragenter", "dragover"]){
     dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add("drag"); });
   }
   for (const ev of ["dragleave", "drop"]) dropZone.addEventListener(ev, () => dropZone.classList.remove("drag"));
-  dropZone.addEventListener("drop", (e) => { e.preventDefault(); addFiles([...(e.dataTransfer?.files || [])]); });
+  dropZone.addEventListener("drop", async (e) => { e.preventDefault(); addFiles(await filesFromDrop(e.dataTransfer)); });
 
   /* ======================= EDITAR / REMOVER ======================= */
   const editDlg = $("editDlg");
@@ -297,10 +288,21 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
   const editSave = $("editSave");
   const editDelete = $("editDelete");
   wireDialog(editDlg);
-  let editing = null;   // { url, file, theme }
+  let editing = null;   // { url, file, title, themeKey, duration }
 
   const setEditStatus = (msg, kind = "") => { editStatus.textContent = msg; editStatus.className = `uploadStatus ${kind}`; };
   const setEditBusy = (b) => { editSave.disabled = b; editDelete.disabled = b; };
+
+  /* mesmas mudanças, aplicadas localmente para a interface responder na hora */
+  function localMove(oldUrl, newUrl, dest){
+    const playlist = getPlaylist();
+    const found = locate(playlist, oldUrl);
+    if (found){
+      found.theme.items.splice(found.index, 1);
+      if (newUrl) ensureTheme(playlist, dest.group, dest.name).items.push(makeItem(newUrl, found.item.duration));
+    }
+    return normalizePlaylist(playlist);
+  }
 
   async function saveEdit(e){
     e.preventDefault();
@@ -309,44 +311,36 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
     if (!validName(newStem)){ editName.focus(); return; }
     const target = getThemes().find(t => t.key === editTheme.value);
     if (!target) return;
-    const ext = extOf(editing.file);
     const sameTheme = target.key === editing.themeKey;
     if (sameTheme && newStem === stem(editing.file)){ editDlg.close(); return; }
+    if (!(await requireAuth())) return;
 
     setEditBusy(true);
     setEditStatus("Salvando no repositório…");
     const oldUrl = editing.url;
+    const ext = extOf(editing.file);
     try{
-      const result = await commit(async (head) => {
-        const playlist = await readRepoJson("playlist.json", head, { themes: [] });
-        const found = locate(playlist, oldUrl);
-        if (!found) throw Object.assign(new Error("som não encontrado na playlist do repositório"), { detail: "som não encontrado na playlist do repositório" });
-        const shas = await listDir(oldUrl.slice(0, oldUrl.lastIndexOf("/")), head);
-        const sha = shas.get(oldUrl);
-        if (!sha) throw Object.assign(new Error("arquivo não encontrado"), { detail: "arquivo não encontrado no repositório" });
-
-        found.theme.items.splice(found.index, 1);
-        const dest = ensureTheme(playlist, target.group, target.name);
-        const taken = new Set(dest.items.map(i => String(i.file).toLowerCase()));
+      const result = await commit(async ({ head, treeSha }) => {
+        const files = await listTree(treeSha);
+        const sha = files.find(f => f.path === oldUrl)?.sha;
+        if (!sha) throw Object.assign(new Error("arquivo não encontrado"), { detail: "o arquivo não está mais no repositório" });
+        const dir = themeDir(target.group, target.name);
+        const taken = new Set(files.filter(f => dirOf(f.path) === dir && f.path !== oldUrl).map(f => baseOf(f.path).toLowerCase()));
         const name = uniqueName(cleanFileName(newStem + ext), taken);
-        const newUrl = `${themeDir(target.group, target.name)}/${name}`;
-        const item = { title: niceTitle(name), file: name, url: newUrl };
-        if (found.item.duration != null) item.duration = found.item.duration;
-        dest.items.push(item);
-        normalizePlaylist(playlist);
-
-        const tree = [{ path: oldUrl, sha: null }, { path: newUrl, sha }, { path: "playlist.json", content: jsonText(playlist) }];
+        const newUrl = `${dir}/${name}`;
+        const tree = [{ path: oldUrl, sha: null }, { path: newUrl, sha }];
         const credits = await readRepoJson("credits.json", head, null);
         if (fixCredits(credits, oldUrl, newUrl)) tree.push({ path: "credits.json", content: jsonText(credits) });
         const shared = await readRepoJson("cenas.json", head, null);
         if (fixScenes(shared, oldUrl, newUrl)) tree.push({ path: "cenas.json", content: jsonText(shared) });
-
-        const message = sameTheme ? `Renomeia som: ${editing.file} → ${name}` : `Move som para ${target.group}/${target.name}: ${name}`;
-        return { tree, message, result: { playlist, newUrl, shared } };
+        const message = sameTheme ? `Renomeia som: ${baseOf(oldUrl)} → ${name}` : `Move som para ${target.group}/${target.name}: ${name}`;
+        return { tree, message, result: { newUrl, shared } };
       });
       editDlg.close();
-      onLibraryChanged(result.playlist, { pending: [result.newUrl], renamed: { [oldUrl]: result.newUrl }, shared: result.shared, openKey: target.key });
-      toast("Salvo ✓ publicando em ~1 minuto…", 3500);
+      onLibraryChanged(localMove(oldUrl, result.newUrl, target), {
+        pending: [result.newUrl], renamed: { [oldUrl]: result.newUrl }, shared: result.shared, openKey: target.key,
+      });
+      toast("Salvo ✓ o site publica em 1–3 min", 3500);
     }catch(err){
       setEditStatus(`Não foi possível salvar: ${explainError(err)}.`, "err");
     }finally{
@@ -357,24 +351,22 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
   async function deleteSound(){
     if (!editing) return;
     if (!confirm(`Remover “${displayTitle(editing.title)}” do repositório? Isso apaga o arquivo para todos os aparelhos.`)) return;
+    if (!(await requireAuth())) return;
     setEditBusy(true);
     setEditStatus("Removendo…");
     const url = editing.url;
     try{
-      const result = await commit(async (head) => {
-        const playlist = await readRepoJson("playlist.json", head, { themes: [] });
-        const found = locate(playlist, url);
-        if (found) found.theme.items.splice(found.index, 1);
-        normalizePlaylist(playlist);
-        const tree = [{ path: url, sha: null }, { path: "playlist.json", content: jsonText(playlist) }];
+      const result = await commit(async ({ head, treeSha }) => {
+        const files = await listTree(treeSha);
+        const tree = files.some(f => f.path === url) ? [{ path: url, sha: null }] : [];
         const credits = await readRepoJson("credits.json", head, null);
         if (fixCredits(credits, url, null)) tree.push({ path: "credits.json", content: jsonText(credits) });
         const shared = await readRepoJson("cenas.json", head, null);
         if (fixScenes(shared, url, null)) tree.push({ path: "cenas.json", content: jsonText(shared) });
-        return { tree, message: `Remove som: ${url}`, result: { playlist, shared } };
+        return { tree, message: `Remove som: ${url}`, result: { shared } };
       });
       editDlg.close();
-      onLibraryChanged(result.playlist, { removed: [url], shared: result.shared });
+      onLibraryChanged(localMove(url, null), { removed: [url], shared: result.shared });
       toast("Som removido ✓");
     }catch(err){
       setEditStatus(`Não foi possível remover: ${explainError(err)}.`, "err");
@@ -387,13 +379,18 @@ export function initManage({ getThemes, getGroups, getCurrentTheme, onLibraryCha
   editDelete.addEventListener("click", deleteSound);
 
   return {
-    openUpload(){
-      setStatus("");
-      renderFiles();
-      showView();
+    async openUpload(){
+      const state = authState();
+      if (state === "locked" && !(await requireAuth())) return;
+      needAuth.hidden = state !== "none";
+      form.hidden = state === "none";
+      if (state !== "none") fillSelects();
+      if (!busy){ setStatus(""); setBar(null); entries = entries.filter(x => x.status !== "done" && x.status !== "dup"); renderFiles(); }
       dlg.showModal();
     },
-    openEdit({ url, file, title, themeKey }){
+    async openEdit({ url, file, title, themeKey }){
+      if (authState() === "none"){ toast("Conecte ao GitHub em ⚙️ Ajustes para editar a biblioteca.", 3500); openSettings(); return; }
+      if (!(await requireAuth())) return;
       editing = { url, file, title, themeKey };
       editName.value = stem(file);
       editTheme.innerHTML = themeOptions(getThemes(), themeKey, false);

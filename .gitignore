@@ -1,0 +1,8 @@
+# gerado no deploy (.github/workflows/publicar.yml) ou localmente por ferramentas/gerar_playlist.py
+playlist.json
+_site/
+node_modules/
+__pycache__/
+*.pyc
+test-results/
+package-lock.json

@@ -1,0 +1,13 @@
+{
+  "name": "jogatina-soundboard",
+  "private": true,
+  "description": "Testes do Jogatina Soundboard (o site em si não precisa de build nem de npm)",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
+    "test:e2e": "node --test --test-concurrency=1 \"tests/e2e/*.test.mjs\""
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

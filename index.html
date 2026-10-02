@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <!-- Segurança: só roda scripts deste site e só conversa com o próprio site e com api.github.com -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://api.github.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
   <title>Jogatina Soundboard</title>
   <meta name="description" content="Soundboard de mesa de RPG para iPad: ambientes, trilhas, criaturas e efeitos." />
   <meta name="theme-color" content="#0b0c14" />
@@ -109,7 +112,10 @@
       <div class="sheetTitle">＋ Adicionar sons</div>
       <button class="btn icon" type="button" data-close aria-label="Fechar">✕</button>
     </div>
-    <div id="uploadConnect"></div>
+    <div id="uploadNeedAuth" class="needAuth" hidden>
+      <p>Para enviar sons direto deste aparelho para o repositório, conecte ao GitHub uma vez (o token fica cifrado com uma senha sua).</p>
+      <button id="uploadOpenSettings" class="btn primary big" type="button">⚙️ Conectar em Ajustes</button>
+    </div>
     <form id="uploadForm" hidden>
       <label class="field">
         <span>Tema</span>
@@ -129,14 +135,23 @@
           <input id="newThemeInput" class="input" placeholder="Ex.: Taverna" maxlength="60" />
         </label>
       </div>
-      <label id="dropZone" class="dropZone">
-        <input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.mpeg" multiple hidden />
+      <div id="dropZone" class="dropZone">
         <span class="dropIcon" aria-hidden="true">🎵</span>
-        <span><b>Escolher arquivos de áudio</b><br /><span class="muted small">mp3, m4a, wav, ogg · vários de uma vez · o nome do arquivo vira o nome do som · até 20 s vira efeito</span></span>
-      </label>
+        <div class="dropText">
+          <b>Arraste arquivos ou pastas aqui</b>
+          <span class="muted small">mp3, m4a, wav, ogg · o nome do arquivo vira o nome do som · até 20 s vira efeito · pastas viram temas (Grupo/Tema)</span>
+          <div class="dropBtns">
+            <label class="btn"><input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.mpeg" multiple hidden />🎵 Escolher arquivos</label>
+            <button id="folderBtn" class="btn" type="button">📁 Escolher pasta</button>
+            <input id="folderInput" type="file" webkitdirectory multiple hidden />
+          </div>
+        </div>
+      </div>
       <ul id="fileList" class="fileList"></ul>
+      <div id="uploadBar" class="progress" hidden><span></span></div>
       <button id="sendBtn" class="btn big primary" type="submit" disabled>Enviar</button>
       <div id="uploadStatus" class="uploadStatus" role="status"></div>
+      <p class="muted small">🔐 Envio direto pela API do GitHub: sem git e sem pull. Sons repetidos são reconhecidos e não são enviados de novo.</p>
     </form>
   </dialog>
 
@@ -218,6 +233,20 @@
     </div>
     <p class="muted small">Sons do <a href="https://freesound.org" target="_blank" rel="noopener">Freesound</a> e de seus autores. Os demais são do acervo pessoal.</p>
     <div id="creditsList" class="creditsList"></div>
+  </dialog>
+
+  <!-- Desbloquear o token -->
+  <dialog id="unlockDlg" class="sheet narrow">
+    <div class="sheetHead">
+      <div class="sheetTitle">🔒 Desbloquear GitHub</div>
+      <button class="btn icon" type="button" data-close aria-label="Fechar">✕</button>
+    </div>
+    <p class="muted small">Digite a senha que protege o token neste aparelho.</p>
+    <form id="unlockForm" class="row">
+      <input id="unlockPassword" class="input" type="password" placeholder="Senha" autocomplete="current-password" />
+      <button class="btn primary" type="submit">Desbloquear</button>
+    </form>
+    <div id="unlockStatus" class="uploadStatus" role="status"></div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

@@ -12,7 +12,9 @@ export const LS = {
   prefs: "jogatina_prefs_v1",          // { oneMusic }
   sharedCache: "jogatina_shared_scenes_v1",
   migrated: "jogatina_paths_v2",
-  token: "jogatina_gh_token_v1",
+  token: "jogatina_gh_token_v1",       // (antigo, texto puro — removido ao abrir)
+  vault: "jogatina_gh_vault_v1",       // token cifrado com senha (js/vault.js)
+  vaultFails: "jogatina_gh_vault_fails",
 };
 
 export function readJson(key, fallback){

@@ -1,5 +1,7 @@
 /* Biblioteca de sons (playlist.json), favoritos, recentes e créditos */
 import { LS, readJson, writeJson, displayTitle, titleFromUrl, groupStyle } from "./util.js";
+import { playlistFromPaths } from "./rules.js";
+import { owner, repo, BRANCH } from "./github.js";
 
 export const FX_MAX_SECONDS = 20;   // até isso, o som é tratado como efeito (toca 1×)
 const RECENT_MAX = 18;
@@ -40,12 +42,20 @@ export function sortedGroups(){
 export const themesOfGroup = (group) => lib.themes.filter(t => t.group === group);
 export const totalSounds = () => lib.byUrl.size;
 
+/* playlist.json é gerado no deploy (GitHub Action). Se ainda não existir no site,
+   monta a lista direto da árvore do repositório (sem durações). */
 export async function fetchPlaylist(){
   const res = await fetch(`playlist.json?t=${Date.now()}`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`playlist.json ${res.status}`);
-  const data = await res.json();
-  if (!Array.isArray(data?.themes)) throw new Error("playlist.json inválido");
-  return data.themes;
+  if (res.ok){
+    const data = await res.json();
+    if (!Array.isArray(data?.themes)) throw new Error("playlist.json inválido");
+    return data.themes;
+  }
+  if (res.status !== 404) throw new Error(`playlist.json ${res.status}`);
+  const tree = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${BRANCH}?recursive=1`, { cache: "no-store" });
+  if (!tree.ok) throw new Error(`árvore do repositório ${tree.status}`);
+  const data = await tree.json();
+  return playlistFromPaths((data.tree || []).filter(e => e.type === "blob").map(e => e.path)).themes;
 }
 
 /* ---------- favoritos e recentes ---------- */

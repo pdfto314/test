@@ -4,7 +4,7 @@
 import { $, LS, readJson, writeJson, escapeHtml, toast, wireDialog, themeStyle, plural } from "./util.js";
 import { titleOf, themeOf } from "./library.js";
 import * as engine from "./engine.js";
-import { commit, readRepoJson, jsonText, explainError, isConnected, onAuthChange } from "./github.js";
+import { commit, readRepoJson, jsonText, explainError, hasVault, requireAuth, onAuthChange } from "./github.js";
 
 let shared = readJson(LS.sharedCache, { scenes: [] }).scenes || [];
 const listeners = new Set();
@@ -102,7 +102,8 @@ function snapshot(name){
 const newId = () => Math.random().toString(16).slice(2, 8) + Date.now().toString(36);
 
 async function publishShared(scene, { removeId } = {}){
-  return commit(async (head) => {
+  if (!(await requireAuth())) throw Object.assign(new Error("cancelado"), { cancelled: true });
+  return commit(async ({ head }) => {
     const data = await readRepoJson("cenas.json", head, { scenes: [] });
     data.scenes = (data.scenes || []).filter(s => s.id !== removeId && s.id !== scene?.id);
     if (scene) data.scenes.push(scene);
@@ -121,7 +122,7 @@ export function initScenes({ setMasters }){
   const list = $("sceneList");
   wireDialog(dlg);
 
-  const syncShare = () => { shareBox.hidden = !isConnected(); };
+  const syncShare = () => { shareBox.hidden = !hasVault(); };
   onAuthChange(() => { syncShare(); if (dlg.open) render(); });
 
   function render(){
@@ -142,13 +143,13 @@ export function initScenes({ setMasters }){
         row.className = "sceneItem" + (isActive(s) ? " active" : "");
         row.style.setProperty("--h", sceneHue(s));
         const names = s.ambients.slice(0, 3).map(titleOf).join(" · ") + (s.ambients.length > 3 ? ` +${s.ambients.length - 3}` : "");
-        const canDelete = !s.shared || isConnected();
+        const canDelete = !s.shared || hasVault();
         row.innerHTML = `
           <button class="sceneApply" type="button">
             <span class="sceneIcon">${s.icon}</span>
             <span class="sceneText"><b>${escapeHtml(s.name)}</b><small>${escapeHtml(names || sceneSummary(s))}</small></span>
           </button>
-          ${!s.shared && isConnected() ? `<button class="btn icon" type="button" data-share title="Compartilhar com todos os aparelhos" aria-label="Compartilhar">☁️</button>` : ""}
+          ${!s.shared && hasVault() ? `<button class="btn icon" type="button" data-share title="Compartilhar com todos os aparelhos" aria-label="Compartilhar">☁️</button>` : ""}
           ${canDelete ? `<button class="btn icon danger" type="button" data-del aria-label="Excluir cena">🗑</button>` : ""}`;
         row.querySelector(".sceneApply").addEventListener("click", () => { applyScene(s); dlg.close(); });
         row.querySelector("[data-share]")?.addEventListener("click", async () => {
@@ -159,7 +160,7 @@ export function initScenes({ setMasters }){
             setSharedData(data);
             render();
             toast("Cena compartilhada ✓");
-          }catch(err){ toast(`Não foi possível compartilhar: ${explainError(err)}.`, 4000); }
+          }catch(err){ if (!err.cancelled) toast(`Não foi possível compartilhar: ${explainError(err)}.`, 4000); }
         });
         row.querySelector("[data-del]")?.addEventListener("click", async () => {
           if (!confirm(`Excluir a cena “${s.name}”?${s.shared ? " Ela some de todos os aparelhos." : ""}`)) return;
@@ -172,7 +173,7 @@ export function initScenes({ setMasters }){
             setSharedData(await publishShared(null, { removeId: s.id }));
             render();
             toast("Cena excluída ✓");
-          }catch(err){ toast(`Não foi possível excluir: ${explainError(err)}.`, 4000); }
+          }catch(err){ if (!err.cancelled) toast(`Não foi possível excluir: ${explainError(err)}.`, 4000); }
         });
         list.appendChild(row);
       }
@@ -185,7 +186,7 @@ export function initScenes({ setMasters }){
     if (!name){ nameInput.focus(); return; }
     if (!engine.loops.size && !engine.spots.size){ toast("Ligue alguns ambientes antes de salvar a cena."); return; }
     const scene = snapshot(name);
-    const wantsShare = isConnected() && shareCheck.checked;
+    const wantsShare = hasVault() && shareCheck.checked;
 
     if (wantsShare){
       const existing = shared.find(s => s.name.toLowerCase() === name.toLowerCase());
@@ -193,7 +194,7 @@ export function initScenes({ setMasters }){
       try{
         setSharedData(await publishShared({ id: existing?.id ?? newId(), ...scene }));
         toast("Cena salva e compartilhada ✓");
-      }catch(err){ toast(`Não foi possível compartilhar: ${explainError(err)}.`, 4000); return; }
+      }catch(err){ if (!err.cancelled) toast(`Não foi possível compartilhar: ${explainError(err)}.`, 4000); return; }
     }else{
       const sets = localSets();
       const existing = sets.find(x => x.name.toLowerCase() === name.toLowerCase());
