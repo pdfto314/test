@@ -4,113 +4,146 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Jogatina Soundboard</title>
+  <meta name="theme-color" content="#0d0f17" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Jogatina" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">🎲</div>
-      <div class="titles">
-        <div class="h1">Jogatina Soundboard</div>
-        <div class="h2">Ambientes + efeitos • iPad friendly • (preferência: playlist.json; fallback: GitHub API)</div>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brandIcon" aria-hidden="true">🎲</span>
+        <span class="brandName">Jogatina</span>
       </div>
+
+      <label class="search">
+        <span aria-hidden="true">🔎</span>
+        <input id="search" type="search" placeholder="Buscar som…" autocomplete="off" autocorrect="off" spellcheck="false" />
+      </label>
+
+      <div class="topActions">
+        <button id="scenesBtn" class="btn" type="button">🎬 <span class="lbl">Cenas</span></button>
+        <button id="uploadBtn" class="btn" type="button">＋ <span class="lbl">Sons</span></button>
+        <button id="refreshBtn" class="btn icon" type="button" aria-label="Atualizar lista de sons">↻</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <nav id="themeList" class="themeList" aria-label="Temas"></nav>
+
+      <main id="main" class="main">
+        <div class="mainHead">
+          <h1 id="gridTitle" class="gridTitle">Carregando…</h1>
+          <div class="legend"><b>Toque</b> = loop 🔁 &nbsp;·&nbsp; <b>1×</b> = toca uma vez</div>
+        </div>
+        <div id="grid" class="grid"></div>
+      </main>
     </div>
 
-    <div class="controls">
-      <button id="unlockBtn" class="btn primary" title="No iOS/iPad, toque 1x para liberar áudio">
-        <span class="dot" id="unlockDot"></span>
-        <span id="unlockLabel">Liberar áudio</span>
-      </button>
-
-      <div class="slider">
-        <label>Ambiente</label>
-        <input id="ambientVol" type="range" min="0" max="1" step="0.01" value="0.7" />
+    <footer class="dock">
+      <div class="dockPlaying">
+        <div class="dockLabel">Tocando <span id="playingCount" class="badge">0</span></div>
+        <div id="dockList" class="dockList"></div>
       </div>
-
-      <div class="slider">
-        <label>Efeito</label>
-        <input id="fxVol" type="range" min="0" max="1" step="0.01" value="0.9" />
+      <div class="dockMaster">
+        <label class="master">
+          <span>🌫️ Ambiente</span>
+          <input id="ambVol" class="range" type="range" min="0" max="1" step="0.01" value="0.7" />
+        </label>
+        <label class="master">
+          <span>💥 Efeitos</span>
+          <input id="fxVol" class="range" type="range" min="0" max="1" step="0.01" value="0.9" />
+        </label>
+        <button id="stopAllBtn" class="btn danger" type="button">■ Parar tudo</button>
       </div>
+    </footer>
+  </div>
 
-      <button id="stopAllAmbientBtn" class="btn" title="Para todos os ambientes">Parar Ambientes</button>
-      <button id="clearFxBtn" class="btn" title="Para e limpa todos os efeitos">Limpar Efeitos</button>
-      <button id="resetTrackVolBtn" class="btn" title="Reseta volumes individuais">Reset Vols</button>
+  <!-- Tela inicial: o iPad só libera áudio depois de um toque -->
+  <div id="startScreen" class="startScreen">
+    <div class="startCard">
+      <div class="startLogo" aria-hidden="true">🎲</div>
+      <div class="startTitle">Jogatina</div>
+      <div class="startSub">Soundboard de mesa</div>
+      <button id="resumeBtn" class="btn big primary" type="button" hidden>▶ Continuar cena anterior</button>
+      <button id="startBtn" class="btn big primary" type="button">Começar</button>
+      <div class="startHint">Dica: no Safari, toque em <b>Compartilhar → Adicionar à Tela de Início</b> para abrir em tela cheia.</div>
     </div>
-  </header>
+  </div>
 
-  <main class="grid">
-    <section class="card">
-      <div class="cardTitle">🗂️ Temas</div>
-      <div class="cardSub">Carrega da <b>playlist.json</b> (evita rate limit). O botão “Recarregar” tenta GitHub API e salva cache.</div>
+  <!-- Cenas -->
+  <dialog id="scenesDlg" class="sheet">
+    <div class="sheetHead">
+      <div class="sheetTitle">🎬 Cenas</div>
+      <button class="btn icon" type="button" data-close aria-label="Fechar">✕</button>
+    </div>
+    <p class="muted">Uma cena guarda os sons em loop que estão tocando e seus volumes. Toque numa cena para trocar com transição suave.</p>
+    <form id="saveSceneForm" class="row">
+      <input id="sceneName" class="input" placeholder="Nome da cena (ex.: Taverna chuvosa)" maxlength="60" />
+      <button class="btn primary" type="submit">Salvar atual</button>
+    </form>
+    <div id="sceneList" class="sceneList"></div>
+  </dialog>
 
-      <div class="row">
-        <input id="themeFilter" class="input" placeholder="Filtrar temas..." />
-        <button id="reloadBtn" class="btn">Recarregar</button>
+  <!-- Adicionar sons -->
+  <dialog id="uploadDlg" class="sheet">
+    <div class="sheetHead">
+      <div class="sheetTitle">＋ Adicionar sons</div>
+      <button class="btn icon" type="button" data-close aria-label="Fechar">✕</button>
+    </div>
+
+    <div id="connectBox" hidden>
+      <p class="muted">Os sons vão direto para o repositório no GitHub e aparecem aqui em ~1 minuto. Para isso, conecte uma vez com um token:</p>
+      <ol class="steps">
+        <li>Abra <a id="tokenLink" href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">criar token no GitHub</a>.</li>
+        <li>Em <b>Repository access</b>, escolha <b>Only select repositories</b> → <b id="repoName">este repositório</b>.</li>
+        <li>Em <b>Permissions → Contents</b>, escolha <b>Read and write</b>.</li>
+        <li>Gere o token, copie e cole abaixo.</li>
+      </ol>
+      <form id="connectForm" class="row">
+        <input id="tokenInput" class="input" type="password" placeholder="github_pat_…" autocomplete="off" />
+        <button class="btn primary" type="submit">Conectar</button>
+      </form>
+      <p class="muted small">O token fica salvo só neste aparelho.</p>
+    </div>
+
+    <form id="uploadForm" hidden>
+      <label class="field">
+        <span>Tema</span>
+        <select id="themeSelect" class="input"></select>
+      </label>
+      <label class="field" id="newThemeField" hidden>
+        <span>Nome do novo tema</span>
+        <input id="newThemeInput" class="input" placeholder="Ex.: Taverna" maxlength="60" />
+      </label>
+
+      <label id="dropZone" class="dropZone">
+        <input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.mpeg" multiple hidden />
+        <span class="dropIcon" aria-hidden="true">🎵</span>
+        <span><b>Escolher arquivos de áudio</b><br /><span class="muted small">mp3, m4a, wav, ogg — pode escolher vários</span></span>
+      </label>
+      <ul id="fileList" class="fileList"></ul>
+
+      <button id="sendBtn" class="btn big primary" type="submit" disabled>Enviar</button>
+      <div id="uploadStatus" class="uploadStatus" role="status"></div>
+      <div class="account muted small">
+        <span id="accountLabel"></span>
+        <button id="disconnectBtn" class="linkBtn" type="button">Desconectar</button>
       </div>
+    </form>
+  </dialog>
 
-      <div id="status" class="status">Carregando...</div>
-      <div id="themes" class="themes"></div>
-    </section>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <section class="card">
-      <div class="cardTitle">🎵 Faixas</div>
-      <div class="cardSub" id="tracksTitle">Selecione um tema</div>
-
-      <div class="row rowWrap">
-        <span class="pill" id="nowAmbients">Ambientes: —</span>
-        <span class="pill" id="fxCount">Efeitos: 0</span>
-      </div>
-
-      <!-- NOVO: Tocando agora (mantendo a UI) -->
-      <div id="nowPlayingBox" class="nowBox">
-        <div class="nowBoxHeader">
-          <div class="nowBoxTitle">🎧 Tocando agora</div>
-          <div class="nowBoxSub">Troque e ajuste o volume de cada ambiente sem parar os outros</div>
-        </div>
-        <div id="nowPlayingList" class="nowList"></div>
-      </div>
-
-      <div class="hint small">
-        Volume final por faixa = <code>Vol individual × Vol do canal</code>.
-        Use <b>Ambiente+</b> para empilhar ambientes.
-      </div>
-
-      <div id="tracks" class="tracks"></div>
-    </section>
-
-    <section class="card">
-      <div class="cardTitle">🧩 Sets (cenas)</div>
-      <div class="cardSub">Salve combinação de ambientes (múltiplos) + efeitos.</div>
-
-      <div class="row">
-        <select id="setSelect" class="select"></select>
-        <button id="applySetBtn" class="btn primary">Aplicar</button>
-      </div>
-
-      <div class="row">
-        <input id="setName" class="input" placeholder="Nome do set (ex.: Taverna chuvosa)" />
-      </div>
-
-      <div class="row">
-        <button id="saveSetBtn" class="btn">Salvar Set</button>
-        <button id="deleteSetBtn" class="btn danger">Excluir</button>
-      </div>
-
-      <details class="details">
-        <summary>⚙️ Como atualizar a playlist</summary>
-        <div class="mono small">
-          Automático: dê Push dos áudios na <code>main</code> e o GitHub Action atualiza o <code>playlist.json</code>.<br/>
-          Manual: rode <code>generate_playlist.bat</code> (gera <code>playlist.json</code>) e faça Commit+Push.<br/>
-          No iPad: só abre o link (não usa GitHub API por padrão).
-        </div>
-      </details>
-    </section>
-  </main>
-
-  <footer class="footer">
-    Dica: no iPad/iPhone, toque em “Liberar áudio” 1x antes de tentar tocar.
-  </footer>
-
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

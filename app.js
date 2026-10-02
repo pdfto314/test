@@ -1,572 +1,645 @@
-/* Jogatina Soundboard - Manifest-first (evita GitHub API rate limit no iPad)
-   - Carrega /playlist.json (estático no repo)
-   - Botão Recarregar: tenta GitHub API para rebuild e salva no cache (localStorage)
-   - Multi-ambiente + FX
-   - Volume individual por áudio (persistido)
-   - Sets com multi-ambiente + volumes
+/* Jogatina Soundboard — feito para iPad
+   - Biblioteca vem do playlist.json (atualizado pelo GitHub Action / gerar_playlist.py)
+   - Toque no som = loop (ambiente) · botão 1× = toca uma vez (efeito)
+   - Volumes via Web Audio: no iPad o volume do <audio> é somente leitura
+   - Cenas e volumes salvos no aparelho (localStorage)
 */
+import { initUpload } from "./upload.js";
 
-const OWNER = "pdfto314";      // opcional: usado apenas no "Recarregar" via API
-const REPO  = "test";
-const BRANCH = "main";
-const AUDIO_PATH = "audio";
-
-const EXT_OK = [".mp3", ".wav", ".ogg", ".m4a", ".mpeg"];
-
-const els = {
-  status: document.getElementById("status"),
-  themes: document.getElementById("themes"),
-  themeFilter: document.getElementById("themeFilter"),
-  reloadBtn: document.getElementById("reloadBtn"),
-  tracksTitle: document.getElementById("tracksTitle"),
-  tracks: document.getElementById("tracks"),
-
-  unlockBtn: document.getElementById("unlockBtn"),
-  unlockDot: document.getElementById("unlockDot"),
-  unlockLabel: document.getElementById("unlockLabel"),
-  ambientVol: document.getElementById("ambientVol"),
-  fxVol: document.getElementById("fxVol"),
-  stopAllAmbientBtn: document.getElementById("stopAllAmbientBtn"),
-  clearFxBtn: document.getElementById("clearFxBtn"),
-  resetTrackVolBtn: document.getElementById("resetTrackVolBtn"),
-  nowAmbients: document.getElementById("nowAmbients"),
-  fxCount: document.getElementById("fxCount"),
-  nowPlayingList: document.getElementById("nowPlayingList"),
-
-  setSelect: document.getElementById("setSelect"),
-  applySetBtn: document.getElementById("applySetBtn"),
-  saveSetBtn: document.getElementById("saveSetBtn"),
-  deleteSetBtn: document.getElementById("deleteSetBtn"),
-  setName: document.getElementById("setName"),
-};
-
-const ambientPlayers = new Map(); // url -> Audio
-const fxPlayers = new Map();
+const FADE_IN = 1.2;
+const FADE_OUT = 0.8;
+const SCENE_FADE = 1.5;
 
 const LS_TRACKVOL = "jogatina_track_vol_v1";  // { url: 0..1 }
-const LS_SETS = "jogatina_sets_v2";           // { sets:[...] }
-const LS_CACHE = "jogatina_library_cache_v1"; // {themes:[...], ts}
-const LS_LAST = "jogatina_last_scene_v4";
+const LS_SETS = "jogatina_sets_v2";           // { sets:[{id,name,scene}] }
+const LS_CACHE = "jogatina_library_cache_v1"; // { themes, ts }
+const LS_LAST = "jogatina_last_scene_v4";     // { scene, lastThemeName }
 
-let trackVol = readJson(LS_TRACKVOL, {});
-let themes = [];
-let swapOptionsHtml = "";   // <option>s do "Trocar por…", montado 1x por biblioteca
-let libraryStatus = "";
-let lastTheme = null;
+const $ = (id) => document.getElementById(id);
+const els = {
+  search: $("search"),
+  scenesBtn: $("scenesBtn"),
+  uploadBtn: $("uploadBtn"),
+  refreshBtn: $("refreshBtn"),
+  themeList: $("themeList"),
+  main: $("main"),
+  gridTitle: $("gridTitle"),
+  grid: $("grid"),
+  playingCount: $("playingCount"),
+  dockList: $("dockList"),
+  ambVol: $("ambVol"),
+  fxVol: $("fxVol"),
+  stopAllBtn: $("stopAllBtn"),
+  startScreen: $("startScreen"),
+  startBtn: $("startBtn"),
+  resumeBtn: $("resumeBtn"),
+  scenesDlg: $("scenesDlg"),
+  saveSceneForm: $("saveSceneForm"),
+  sceneName: $("sceneName"),
+  sceneList: $("sceneList"),
+  toast: $("toast"),
+};
 
-function clamp01(v){ if (Number.isNaN(v)) return 1; return Math.max(0, Math.min(1, v)); }
-function escapeHtml(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-function setStatus(msg){ els.status.textContent = msg; }
-function isAudioFile(name){ const low = name.toLowerCase(); return EXT_OK.some(ext => low.endsWith(ext)); }
+const ICONS = [
+  [/aranha|spider/, "🕷️"], [/batalhas?_?sit|cidade|borderlands/, "🏰"], [/batalha|combate|battle/, "⚔️"],
+  [/cavalo|horse/, "🐎"], [/chuva|rain|tempestade/, "🌧️"], [/coruja|owl/, "🦉"], [/cult|seita/, "🕯️"],
+  [/drag/, "🐉"], [/dungeon|caverna|masmorra/, "🗝️"], [/floresta|forest|mata/, "🌲"], [/goblin|orc/, "👺"],
+  [/lobo|wolf/, "🐺"], [/warg/, "🐕"], [/mar|ocean|navio|porto/, "🌊"], [/minotauro/, "🐂"],
+  [/morto|zumbi|zombie|undead|esqueleto/, "🧟"], [/procura|busca|explora/, "🔎"], [/rato|rat/, "🐀"],
+  [/ritual|magia|magic/, "🔮"], [/tensao|suspense|medo|horror/, "😰"], [/taverna|tavern/, "🍺"],
+  [/fogo|fire|fogueira/, "🔥"], [/vento|wind/, "💨"], [/musica|music/, "🎶"],
+];
 
+/* ---------- utilidades ---------- */
 function readJson(key, fallback){
-  try{ const raw = localStorage.getItem(key); if (!raw) return fallback; return JSON.parse(raw); }
+  try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
   catch{ return fallback; }
 }
 function writeJson(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); }catch{}
 }
-
-function niceTitle(file){
-  return file
-    .replace(/\.[^.]+$/,"")
-    .replaceAll("_"," ")
-    .replaceAll("-"," ")
-    .replace(/\s+/g," ")
-    .trim();
+function clamp01(v){ v = Number(v); return Number.isNaN(v) ? 1 : Math.max(0, Math.min(1, v)); }
+function escapeHtml(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function norm(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
+function themeLabel(name){ return name.replace(/[_-]+/g, " ").trim(); }
+function themeIcon(name){
+  const n = norm(name);
+  return ICONS.find(([re]) => re.test(n))?.[1] ?? "🎵";
+}
+function niceTitle(url){
+  let file = url.split("/").pop() || "";
+  try{ file = decodeURIComponent(file); }catch{}
+  return file.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Som";
 }
 
-function fileName(url){
-  try{ return decodeURIComponent(url.split("/").pop() || ""); }
-  catch{ return url.split("/").pop() || ""; }
+let toastTimer = 0;
+function toast(msg, ms = 2600){
+  els.toast.textContent = msg;
+  els.toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => els.toast.classList.remove("show"), ms);
 }
-function shortName(url){ return niceTitle(fileName(url)).slice(0, 18) || "Áudio"; }
 
-function getTrackVol(url){
-  const v = trackVol?.[url];
-  return (typeof v === "number") ? clamp01(v) : 1;
+/* ---------- estado ---------- */
+let themes = [];                 // [{ name, items:[{title,file,url}] }]
+let currentTheme = null;
+let query = "";
+let trackVol = readJson(LS_TRACKVOL, {});
+let pending = new Set();         // sons recém-enviados que o GitHub Pages ainda está publicando
+const byUrl = new Map();         // url -> { title, theme }
+const loops = new Map();         // url -> player (ambiente em loop)
+const shots = new Map();         // url -> player (efeito, toca 1×)
+
+/* "rain_ambience.wav" -> "Rain ambience" (nomes de arquivo viram títulos legíveis) */
+function fixMojibake(s){
+  // nomes salvos com codificação errada: "TÃ¼bingen" -> "Tübingen"
+  if (!/[ÃÂ]/.test(s)) return s;
+  try{ return decodeURIComponent(escape(s)); }catch{ return s; }
 }
-function setTrackVol(url, v){
+function displayTitle(title){
+  const t = fixMojibake(String(title)).replace(/\.(wav|flac|aiff?|mp3|ogg|m4a)$/i, "").replace(/\s+/g, " ").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+const titleOf = (url) => displayTitle(byUrl.get(url)?.title ?? niceTitle(url));
+
+/* ---------- motor de áudio ---------- */
+let ctx = null, ambBus = null, fxBus = null;
+
+function ensureAudio(){
+  if (!ctx){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ctx = new AC();
+    ambBus = ctx.createGain();
+    fxBus = ctx.createGain();
+    ambBus.gain.value = clamp01(els.ambVol.value);
+    fxBus.gain.value = clamp01(els.fxVol.value);
+    ambBus.connect(ctx.destination);
+    fxBus.connect(ctx.destination);
+  }
+  if (ctx.state !== "running") ctx.resume().catch(() => {});
+}
+
+function ramp(param, value, secs){
+  const t = ctx.currentTime;
+  param.cancelScheduledValues(t);
+  param.setValueAtTime(param.value, t);
+  param.linearRampToValueAtTime(value, t + secs);
+}
+
+function getVol(url){
+  const v = trackVol[url];
+  return typeof v === "number" ? clamp01(v) : 1;
+}
+function setVol(url, v){
   trackVol[url] = clamp01(v);
   writeJson(LS_TRACKVOL, trackVol);
-}
-
-function effectiveAmbientVol(url){
-  return clamp01(getTrackVol(url) * parseFloat(els.ambientVol.value));
-}
-function effectiveFxVol(url){
-  return clamp01(getTrackVol(url) * parseFloat(els.fxVol.value));
-}
-
-function refreshVolumes(){
-  for (const [url, a] of ambientPlayers) a.volume = effectiveAmbientVol(url);
-  for (const [url, a] of fxPlayers) a.volume = effectiveFxVol(url);
-}
-
-/* Muda o volume individual e sincroniza todos os sliders da mesma faixa */
-function changeTrackVol(url, v, source){
-  setTrackVol(url, v);
-  refreshVolumes();
-  for (const el of document.querySelectorAll("input[data-vol-url]")){
-    if (el !== source && el.dataset.volUrl === url) el.value = getTrackVol(url);
+  for (const p of [loops.get(url), shots.get(url)]){
+    if (p) ramp(p.gain.gain, trackVol[url], 0.05);
   }
   saveLastScene();
 }
-
-function updateAmbientPill(){
-  if (ambientPlayers.size === 0){ els.nowAmbients.textContent = "Ambientes: —"; return; }
-  const names = [...ambientPlayers.keys()].slice(0,3).map(shortName);
-  const more = ambientPlayers.size > 3 ? ` +${ambientPlayers.size - 3}` : "";
-  els.nowAmbients.textContent = `Ambientes: ${names.join(", ")}${more}`;
-}
-function updateFxCount(){ els.fxCount.textContent = `Efeitos: ${fxPlayers.size}`; }
-
-/* Atualiza botões/sliders da lista de faixas aberta sem recriá-la */
-function syncTrackList(){
-  for (const btn of els.tracks.querySelectorAll(".ambBtn")){
-    btn.textContent = ambientPlayers.has(btn.dataset.url) ? "Ambiente ✓" : "Ambiente+";
-  }
-  for (const el of els.tracks.querySelectorAll("input[data-vol-url]")){
-    el.value = getTrackVol(el.dataset.volUrl);
-  }
+function applyMasterVolumes(){
+  if (!ctx) return;
+  ramp(ambBus.gain, clamp01(els.ambVol.value), 0.05);
+  ramp(fxBus.gain, clamp01(els.fxVol.value), 0.05);
 }
 
-function refreshUI(){
-  updateAmbientPill();
-  updateFxCount();
-  renderNowPlaying();
-  syncTrackList();
-  saveLastScene();
+function createPlayer(url, loop){
+  ensureAudio();
+  const el = new Audio();
+  el.preload = "auto";
+  el.loop = loop;
+  el.src = url;
+  const source = ctx.createMediaElementSource(el);
+  const gain = ctx.createGain();
+  gain.gain.value = 0;
+  source.connect(gain);
+  gain.connect(loop ? ambBus : fxBus);
+  return { url, el, source, gain };
+}
+function disposePlayer(p){
+  p.el.pause();
+  try{ p.source.disconnect(); p.gain.disconnect(); }catch{}
+  // libera a memória do arquivo (importante no iPad com muitos sons)
+  p.el.removeAttribute("src");
+  p.el.load();
+}
+function failed(map, p){
+  if (map.get(p.url) !== p) return;   // já foi parado/substituído
+  map.delete(p.url);
+  disposePlayer(p);
+  toast(`Não foi possível tocar “${titleOf(p.url)}”.`);
+  changed();
 }
 
-/* playback */
-function createAudio(url, loop, volume){
-  const a = new Audio(url);
-  a.loop = loop;
-  a.preload = "auto";
-  a.volume = volume;
-  return a;
+function startLoop(url){
+  if (loops.has(url)) return;
+  const p = createPlayer(url, true);
+  loops.set(url, p);
+  p.el.addEventListener("error", () => failed(loops, p));
+  p.el.play()
+    .then(() => { if (loops.get(url) === p) ramp(p.gain.gain, getVol(url), FADE_IN); })
+    .catch(() => failed(loops, p));
+}
+function stopLoop(url, fade = FADE_OUT){
+  const p = loops.get(url);
+  if (!p) return;
+  loops.delete(url);
+  ramp(p.gain.gain, 0, fade);
+  setTimeout(() => disposePlayer(p), fade * 1000 + 100);
+}
+function toggleLoop(url){
+  if (loops.has(url)) stopLoop(url);
+  else startLoop(url);
+  changed();
 }
 
-function startAmbient(url){
-  if (!url || ambientPlayers.has(url)) return;
-  const a = createAudio(url, true, effectiveAmbientVol(url));
-  // Se o iOS bloquear (sem toque do usuário), fica pausado e volta no "Liberar áudio"
-  a.play().catch(()=>{});
-  ambientPlayers.set(url, a);
-}
-function stopAmbient(url){
-  ambientPlayers.get(url)?.pause();
-  ambientPlayers.delete(url);
-}
-
-function startFx(url){
-  const existing = fxPlayers.get(url);
+function playShot(url){
+  const existing = shots.get(url);
   if (existing){
-    existing.currentTime = 0;
-    existing.volume = effectiveFxVol(url);
-    existing.play().catch(()=>{});
+    existing.el.currentTime = 0;
+    existing.el.play().catch(() => {});
     return;
   }
-
-  const a = createAudio(url, false, effectiveFxVol(url));
-  const done = () => {
-    if (fxPlayers.get(url) !== a) return;
-    fxPlayers.delete(url);
-    updateFxCount();
-    saveLastScene();
-  };
-  a.addEventListener("ended", done);
-  fxPlayers.set(url, a);
-  // efeito que não conseguiu tocar não deve ficar preso no contador
-  a.play().catch(done);
+  const p = createPlayer(url, false);
+  p.gain.gain.value = getVol(url);
+  shots.set(url, p);
+  p.el.addEventListener("ended", () => {
+    if (shots.get(url) !== p) return;
+    shots.delete(url);
+    disposePlayer(p);
+    changed();
+  });
+  p.el.addEventListener("timeupdate", () => updateProgress(url, p));
+  p.el.addEventListener("error", () => failed(shots, p));
+  p.el.play().catch(() => failed(shots, p));
+  changed();
+}
+function stopShot(url){
+  const p = shots.get(url);
+  if (!p) return;
+  shots.delete(url);
+  disposePlayer(p);
 }
 
-function stopAllPlayers(){
-  for (const a of ambientPlayers.values()) a.pause();
-  for (const a of fxPlayers.values()) a.pause();
-  ambientPlayers.clear();
-  fxPlayers.clear();
+function stopAll(){
+  for (const url of [...loops.keys()]) stopLoop(url);
+  for (const url of [...shots.keys()]) stopShot(url);
+  changed();
 }
 
-function toggleAmbient(url){
-  if (ambientPlayers.has(url)) stopAmbient(url);
-  else startAmbient(url);
-  refreshUI();
-}
-
-function swapAmbient(oldUrl, newUrl){
-  if (!newUrl || newUrl === oldUrl || ambientPlayers.has(newUrl)) return;
-
-  // mantém o volume individual do antigo no novo (se o novo ainda não tiver)
-  if (trackVol[newUrl] == null) setTrackVol(newUrl, getTrackVol(oldUrl));
-
-  stopAmbient(oldUrl);
-  startAmbient(newUrl);
-  refreshUI();
-}
-
-function stopAllAmbient(){
-  for (const a of ambientPlayers.values()) a.pause();
-  ambientPlayers.clear();
-  refreshUI();
-}
-
-function playFx(url){
-  startFx(url);
-  updateFxCount();
-  saveLastScene();
-}
-
-function clearFx(){
-  for (const a of fxPlayers.values()) a.pause();
-  fxPlayers.clear();
-  updateFxCount();
-  saveLastScene();
-}
-
-function unlockAudio(){
-  // No iOS o play() só é liberado dentro de um toque; aproveita para retomar
-  // ambientes que ficaram pausados (ex.: cena restaurada ao abrir a página).
-  for (const a of ambientPlayers.values()){
-    if (a.paused) a.play().catch(()=>{});
-  }
-  els.unlockDot.classList.add("on");
-  els.unlockLabel.textContent = "Áudio liberado";
-}
-
-/* now playing (trocar/volume individual) */
-function renderNowPlaying(){
-  els.nowPlayingList.innerHTML = "";
-
-  if (ambientPlayers.size === 0){
-    const div = document.createElement("div");
-    div.className = "status";
-    div.textContent = "Nenhum ambiente tocando.";
-    els.nowPlayingList.appendChild(div);
-    return;
-  }
-
-  for (const url of ambientPlayers.keys()){
-    const div = document.createElement("div");
-    div.className = "nowItem";
-
-    div.innerHTML = `
-      <div class="nowLeft">
-        <div class="nowTitle">${escapeHtml(shortName(url))}</div>
-        <div class="nowMeta">${escapeHtml(fileName(url))}</div>
-      </div>
-      <div class="nowRight">
-        <div class="volBox compact">
-          <label>Vol</label>
-          <input class="volSlider" type="range" min="0" max="1" step="0.01" value="${getTrackVol(url)}" data-vol-url="${escapeHtml(url)}">
-        </div>
-        <select class="swapSelect">
-          <option value="">Trocar por…</option>
-          ${swapOptionsHtml}
-        </select>
-        <button class="btn danger stopOne" type="button" title="Parar este ambiente">✕</button>
-      </div>
-    `;
-
-    const sel = div.querySelector(".swapSelect");
-    const slider = div.querySelector(".volSlider");
-
-    div.querySelector(".stopOne").addEventListener("click", () => {
-      stopAmbient(url);
-      refreshUI();
-    });
-    sel.addEventListener("change", () => {
-      const newUrl = sel.value;
-      sel.value = "";
-      swapAmbient(url, newUrl);
-    });
-    slider.addEventListener("input", () => changeTrackVol(url, parseFloat(slider.value), slider));
-
-    els.nowPlayingList.appendChild(div);
-  }
-}
-
-/* GitHub API helpers (somente usado no botão Recarregar) */
-async function ghFetch(url){
-  const res = await fetch(url, { headers: { "Accept":"application/vnd.github+json" }});
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
-  return await res.json();
-}
-async function listDir(path){
-  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURI(path)}?ref=${BRANCH}`;
-  return await ghFetch(api);
-}
-
-function renderThemes(){
-  els.themes.innerHTML = "";
-  const filter = (els.themeFilter.value || "").trim().toLowerCase();
-
-  const filtered = themes.filter(t => !filter || t.name.toLowerCase().includes(filter));
-  setStatus(filtered.length === 0 ? "Nenhum tema com esse filtro." : libraryStatus);
-
-  for (const theme of filtered){
-    const div = document.createElement("div");
-    div.className = "theme";
-    div.innerHTML = `
-      <div class="name">${escapeHtml(theme.name)}</div>
-      <div class="count">${theme.items?.length || 0} arquivo(s)</div>
-    `;
-    div.addEventListener("click", () => openTheme(theme));
-    els.themes.appendChild(div);
-  }
-}
-
-function setLibrary(newThemes, source){
-  themes = newThemes;
-
-  const all = [];
-  for (const t of themes){
-    for (const it of (t.items || [])) all.push({ theme: t.name, title: it.title, url: it.url });
-  }
-  all.sort((a,b)=>(a.theme + " " + a.title).localeCompare(b.theme + " " + b.title, "pt-BR"));
-  swapOptionsHtml = all
-    .map(t => `<option value="${escapeHtml(t.url)}">${escapeHtml(`${t.theme} — ${t.title}`)}</option>`)
-    .join("");
-
-  libraryStatus = `Pronto: ${themes.length} tema(s) (${source}).`;
-  renderThemes();
-  renderNowPlaying();
-
-  // reabre o tema que estava aberto (ou o da última sessão) com os dados novos
-  const name = lastTheme?.name ?? readJson(LS_LAST, null)?.lastThemeName;
-  const t = themes.find(x => x.name === name);
-  if (t) openTheme(t);
-}
-
-function openTheme(theme){
-  lastTheme = theme;
-  els.tracksTitle.textContent = `Tema: ${theme.name}`;
-  els.tracks.innerHTML = "";
-  saveLastScene();
-
-  const items = theme.items || [];
-  if (items.length === 0){
-    const div = document.createElement("div");
-    div.className = "status";
-    div.textContent = "Sem arquivos de áudio nesta pasta.";
-    els.tracks.appendChild(div);
-    return;
-  }
-
-  for (const it of items){
-    const row = document.createElement("div");
-    row.className = "track";
-
-    row.innerHTML = `
-      <div class="left">
-        <div class="title">${escapeHtml(it.title)}</div>
-        <div class="meta">${escapeHtml(it.file)}</div>
-      </div>
-      <div class="right">
-        <div class="volBox">
-          <label>Vol</label>
-          <input class="trackVol" type="range" min="0" max="1" step="0.01" value="${getTrackVol(it.url)}" data-vol-url="${escapeHtml(it.url)}">
-        </div>
-        <button class="btn primary ambBtn" type="button" data-url="${escapeHtml(it.url)}">${ambientPlayers.has(it.url) ? "Ambiente ✓" : "Ambiente+"}</button>
-        <button class="btn fxBtn" type="button">Efeito</button>
-      </div>
-    `;
-
-    const volSlider = row.querySelector(".trackVol");
-    volSlider.addEventListener("input", () => changeTrackVol(it.url, parseFloat(volSlider.value), volSlider));
-    row.querySelector(".ambBtn").addEventListener("click", () => toggleAmbient(it.url));
-    row.querySelector(".fxBtn").addEventListener("click", () => playFx(it.url));
-
-    els.tracks.appendChild(row);
-  }
-}
-
-/* load library: prefer manifest, then cache */
-async function loadLibraryPreferManifest(){
-  setStatus("Carregando playlist.json…");
+/* mantém a tela do iPad acesa enquanto houver som tocando */
+let wakeLock = null;
+async function syncWakeLock(){
+  const want = loops.size > 0 || shots.size > 0;
   try{
-    const res = await fetch("./playlist.json", { cache: "no-store" });
-    if (!res.ok) throw new Error(`playlist.json ${res.status}`);
-    const data = await res.json();
-    if (!Array.isArray(data?.themes)) throw new Error("playlist.json inválido (esperado: {themes:[...]})");
-
-    writeJson(LS_CACHE, { themes: data.themes, ts: Date.now() });
-    setLibrary(data.themes, "playlist.json");
-  }catch(e){
-    const cache = readJson(LS_CACHE, null);
-    if (Array.isArray(cache?.themes)){
-      setLibrary(cache.themes, "cache");
-      return;
+    if (want && !wakeLock && navigator.wakeLock && document.visibilityState === "visible"){
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    }else if (!want && wakeLock){
+      await wakeLock.release();
+      wakeLock = null;
     }
-    setStatus("Falha ao carregar playlist.json e cache vazio. Use Recarregar (GitHub API).");
-  }
+  }catch{}
 }
 
-async function reloadFromGitHubAPI(){
-  setStatus("Recarregando via GitHub API…");
-  const root = await listDir(AUDIO_PATH);
-  const folders = root.filter(x => x.type === "dir").sort((a,b)=>a.name.localeCompare(b.name, "pt-BR"));
-  if (folders.length === 0){
-    setStatus(`Nenhuma pasta em /${AUDIO_PATH}.`);
-    return;
-  }
-
-  const newThemes = [];
-  for (const f of folders){
-    const children = await listDir(f.path);
-    const audios = children.filter(x => x.type === "file" && isAudioFile(x.name));
-    newThemes.push({
-      name: f.name,
-      count: audios.length,
-      // caminho relativo (igual ao playlist.json) para não perder volumes/sets salvos
-      items: audios.map(a => ({ title: niceTitle(a.name), file: a.name, url: a.path }))
-    });
-  }
-
-  writeJson(LS_CACHE, { themes: newThemes, ts: Date.now() });
-  setLibrary(newThemes, "GitHub API");
-}
-
-/* scenes / sets */
-function readSets(){
-  const data = readJson(LS_SETS, { sets: [] });
-  if (!Array.isArray(data.sets)) data.sets = [];
-  return data;
-}
-function writeSets(sets){
-  writeJson(LS_SETS, { sets });
-}
-function uid(){
-  return Math.random().toString(16).slice(2) + Date.now().toString(16);
-}
-
+/* ---------- cenas ---------- */
 function currentScene(){
   return {
-    ambientVol: clamp01(parseFloat(els.ambientVol.value)),
-    fxVol: clamp01(parseFloat(els.fxVol.value)),
-    ambients: [...ambientPlayers.keys()],
-    fx: [...fxPlayers.keys()],
-    trackVol
+    ambientVol: clamp01(els.ambVol.value),
+    fxVol: clamp01(els.fxVol.value),
+    ambients: [...loops.keys()],
+    fx: [],
+    trackVol,
   };
 }
+function saveLastScene(){
+  writeJson(LS_LAST, { scene: currentScene(), lastThemeName: currentTheme });
+}
 
-function applyScene(scene, { withFx }){
-  stopAllPlayers();
-
-  els.ambientVol.value = clamp01(scene.ambientVol ?? 0.7);
-  els.fxVol.value = clamp01(scene.fxVol ?? 0.9);
-
+function applyScene(scene){
+  ensureAudio();
   if (scene.trackVol && typeof scene.trackVol === "object"){
     trackVol = { ...scene.trackVol };
     writeJson(LS_TRACKVOL, trackVol);
   }
+  if (scene.ambientVol != null) els.ambVol.value = clamp01(scene.ambientVol);
+  if (scene.fxVol != null) els.fxVol.value = clamp01(scene.fxVol);
+  applyMasterVolumes();
 
-  for (const url of (scene.ambients || [])) startAmbient(url);
-  if (withFx){
-    for (const url of (scene.fx || [])) startFx(url);
+  // transição suave: o que sai some devagar, o que fica ajusta o volume, o que entra aparece
+  const want = new Set(scene.ambients || []);
+  for (const url of [...loops.keys()]){
+    if (!want.has(url)) stopLoop(url, SCENE_FADE);
   }
-  refreshUI();
+  for (const url of want){
+    const p = loops.get(url);
+    if (p) ramp(p.gain.gain, getVol(url), 0.3);
+    else startLoop(url);
+  }
+  for (const url of scene.fx || []) playShot(url);   // sets antigos guardavam efeitos
+  changed();
 }
 
-function saveLastScene(){
-  writeJson(LS_LAST, { scene: currentScene(), lastThemeName: lastTheme?.name || null });
+function readSets(){
+  const data = readJson(LS_SETS, { sets: [] });
+  return Array.isArray(data?.sets) ? data.sets : [];
+}
+function writeSets(sets){ writeJson(LS_SETS, { sets }); }
+
+function renderScenes(){
+  const sets = readSets();
+  els.sceneList.innerHTML = "";
+  if (sets.length === 0){
+    els.sceneList.innerHTML = `<div class="empty">Nenhuma cena salva ainda.<br>Toque alguns sons e salve aqui.</div>`;
+    return;
+  }
+  for (const s of sets){
+    const n = s.scene?.ambients?.length || 0;
+    const row = document.createElement("div");
+    row.className = "sceneItem";
+    row.innerHTML = `
+      <button class="sceneApply" type="button"><b>${escapeHtml(s.name)}</b><span>${n} ${n === 1 ? "som" : "sons"}</span></button>
+      <button class="btn danger sceneDel" type="button" aria-label="Excluir cena">🗑</button>`;
+    row.querySelector(".sceneApply").addEventListener("click", () => {
+      applyScene(s.scene || {});
+      els.scenesDlg.close();
+      toast(`🎬 ${s.name}`);
+    });
+    row.querySelector(".sceneDel").addEventListener("click", () => {
+      if (!confirm(`Excluir a cena “${s.name}”?`)) return;
+      writeSets(readSets().filter(x => x.id !== s.id));
+      renderScenes();
+    });
+    els.sceneList.appendChild(row);
+  }
 }
 
-function restoreLastScene(){
-  const data = readJson(LS_LAST, null);
-  if (!data?.scene) return;
-  // efeitos são pontuais: não faz sentido tocá-los de novo ao reabrir a página
-  applyScene(data.scene, { withFx: false });
-  // applyScene salva a cena com lastTheme ainda vazio; preserva o tema anterior
-  writeJson(LS_LAST, { ...readJson(LS_LAST, {}), lastThemeName: data.lastThemeName || null });
-}
+function saveScene(e){
+  e.preventDefault();
+  const name = els.sceneName.value.trim();
+  if (!name){ els.sceneName.focus(); return; }
+  if (loops.size === 0){ toast("Toque alguns sons em loop antes de salvar a cena."); return; }
 
-function refreshSetUI(){
-  const { sets } = readSets();
-  els.setSelect.innerHTML = `<option value="">Selecione…</option>` + sets.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join("");
-}
-
-function saveSet(){
-  const name = (els.setName.value || "").trim();
-  if (!name){ alert("Dê um nome para o set."); return; }
-
-  const { sets } = readSets();
-  const scene = currentScene();
-
+  const sets = readSets();
+  const scene = JSON.parse(JSON.stringify(currentScene()));
   const existing = sets.find(x => x.name.toLowerCase() === name.toLowerCase());
   if (existing){
-    if (!confirm("Já existe um set com esse nome. Sobrescrever?")) return;
+    if (!confirm(`Já existe “${existing.name}”. Substituir?`)) return;
     existing.scene = scene;
   }else{
-    sets.push({ id: uid(), name, scene });
+    sets.push({ id: Math.random().toString(16).slice(2) + Date.now().toString(16), name, scene });
   }
   writeSets(sets);
-  refreshSetUI();
-  alert("Set salvo!");
+  els.sceneName.value = "";
+  renderScenes();
+  toast("Cena salva ✓");
 }
 
-function deleteSet(){
-  const id = els.setSelect.value;
-  if (!id){ alert("Selecione um set para excluir."); return; }
-  const { sets } = readSets();
-  const idx = sets.findIndex(x => x.id === id);
-  if (idx < 0) return;
-  if (!confirm(`Excluir o set "${sets[idx].name}"?`)) return;
-  sets.splice(idx, 1);
-  writeSets(sets);
-  refreshSetUI();
-  els.setName.value = "";
+/* ---------- interface ---------- */
+function changed(){
+  updateTiles();
+  renderDock();
+  renderThemeList();
+  saveLastScene();
+  syncWakeLock();
 }
 
-function applySet(){
-  const id = els.setSelect.value;
-  if (!id){ alert("Selecione um set para aplicar."); return; }
-  const s = readSets().sets.find(x => x.id === id);
-  if (s) applyScene(s.scene, { withFx: true });
+function playingThemes(){
+  const set = new Set();
+  for (const url of [...loops.keys(), ...shots.keys()]){
+    const t = byUrl.get(url)?.theme;
+    if (t) set.add(t);
+  }
+  return set;
 }
 
-/* reset vols */
-function resetTrackVols(){
-  if (!confirm("Resetar volumes individuais para 100%?")) return;
-  trackVol = {};
-  writeJson(LS_TRACKVOL, trackVol);
-  refreshVolumes();
-  refreshUI();
+function renderThemeList(){
+  const live = playingThemes();
+  els.themeList.innerHTML = "";
+  for (const t of themes){
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "themeBtn" + (!query && t.name === currentTheme ? " active" : "");
+    btn.innerHTML = `
+      <span class="themeIcon">${themeIcon(t.name)}</span>
+      <span class="themeName">${escapeHtml(themeLabel(t.name))}</span>
+      ${live.has(t.name) ? `<span class="liveDot" title="Tocando"></span>` : ""}
+      <span class="themeCount">${t.items.length}</span>`;
+    btn.addEventListener("click", () => openTheme(t.name));
+    els.themeList.appendChild(btn);
+  }
 }
 
-/* init */
-els.themeFilter.addEventListener("input", renderThemes);
-els.reloadBtn.addEventListener("click", async () => {
-  try{ await reloadFromGitHubAPI(); }
-  catch(e){ setStatus("Falha ao recarregar via GitHub API (rate limit?)."); }
-});
-els.unlockBtn.addEventListener("click", unlockAudio);
-els.stopAllAmbientBtn.addEventListener("click", stopAllAmbient);
-els.clearFxBtn.addEventListener("click", clearFx);
-els.resetTrackVolBtn.addEventListener("click", resetTrackVols);
+function openTheme(name){
+  currentTheme = name;
+  query = "";
+  els.search.value = "";
+  renderThemeList();
+  renderGrid();
+  els.main.scrollTop = 0;
+  saveLastScene();
+}
 
-for (const slider of [els.ambientVol, els.fxVol]){
-  slider.addEventListener("input", () => {
-    refreshVolumes();
-    saveLastScene();
+function renderGrid(){
+  let list = [];
+  const showTheme = Boolean(query);
+
+  if (query){
+    const q = norm(query);
+    for (const t of themes){
+      for (const it of t.items){
+        if (norm(it.title).includes(q) || norm(themeLabel(t.name)).includes(q)) list.push([it, t.name]);
+      }
+    }
+    els.gridTitle.textContent = `🔎 “${query}” · ${list.length}`;
+  }else{
+    const t = themes.find(x => x.name === currentTheme);
+    if (t){
+      list = t.items.map(it => [it, t.name]);
+      els.gridTitle.textContent = `${themeIcon(t.name)} ${themeLabel(t.name)}`;
+    }else{
+      els.gridTitle.textContent = themes.length ? "Escolha um tema" : "Nenhum som ainda";
+    }
+  }
+
+  els.grid.innerHTML = "";
+  if (list.length === 0){
+    els.grid.innerHTML = `<div class="empty">${query ? "Nada encontrado." : "Nenhum som aqui. Use ＋ Sons para adicionar."}</div>`;
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const [it, themeName] of list){
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    tile.dataset.url = it.url;
+    tile.setAttribute("role", "button");
+    tile.innerHTML = `
+      <div class="tileTop">
+        <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        ${showTheme ? `<span class="tileTheme">${themeIcon(themeName)} ${escapeHtml(themeLabel(themeName))}</span>` : ""}
+      </div>
+      <div class="tileName">${escapeHtml(displayTitle(it.title))}</div>
+      <button class="once" type="button" aria-label="Tocar uma vez">1×</button>
+      <div class="prog"><span></span></div>`;
+    tile.addEventListener("click", () => toggleLoop(it.url));
+    tile.querySelector(".once").addEventListener("click", (e) => {
+      e.stopPropagation();
+      playShot(it.url);
+    });
+    frag.appendChild(tile);
+  }
+  els.grid.appendChild(frag);
+  updateTiles();
+}
+
+function updateTiles(){
+  for (const tile of els.grid.querySelectorAll(".tile")){
+    const url = tile.dataset.url;
+    tile.classList.toggle("on", loops.has(url));
+    tile.classList.toggle("shot", shots.has(url));
+    tile.classList.toggle("pending", pending.has(url));
+    if (!shots.has(url)) tile.querySelector(".prog span").style.width = "0";
+  }
+}
+
+function updateProgress(url, p){
+  const d = p.el.duration;
+  if (!d || !isFinite(d)) return;
+  const pct = `${Math.min(100, (p.el.currentTime / d) * 100)}%`;
+  for (const bar of document.querySelectorAll(`[data-url="${CSS.escape(url)}"] .prog span`)){
+    bar.style.width = pct;
+  }
+}
+
+function renderDock(){
+  const total = loops.size + shots.size;
+  els.playingCount.textContent = String(total);
+  els.dockList.innerHTML = "";
+
+  if (total === 0){
+    els.dockList.innerHTML = `<div class="dockEmpty">Nada tocando. Toque num som para começar.</div>`;
+    return;
+  }
+
+  const card = (url, kind) => {
+    const div = document.createElement("div");
+    div.className = `dockCard ${kind}`;
+    div.dataset.url = url;
+    div.innerHTML = `
+      <div class="dcTop">
+        <span aria-hidden="true">${kind === "loop" ? "🔁" : "💥"}</span>
+        <span class="dcName">${escapeHtml(titleOf(url))}</span>
+        <button class="dcStop" type="button" aria-label="Parar">✕</button>
+      </div>
+      <input class="range" type="range" min="0" max="1" step="0.01" value="${getVol(url)}" aria-label="Volume" />
+      ${kind === "shot" ? `<div class="prog"><span></span></div>` : ""}`;
+    div.querySelector(".dcStop").addEventListener("click", () => {
+      if (kind === "loop") stopLoop(url); else stopShot(url);
+      changed();
+    });
+    const slider = div.querySelector(".range");
+    slider.addEventListener("input", () => setVol(url, slider.value));
+    return div;
+  };
+
+  for (const url of loops.keys()) els.dockList.appendChild(card(url, "loop"));
+  for (const url of shots.keys()) els.dockList.appendChild(card(url, "shot"));
+}
+
+/* ---------- biblioteca ---------- */
+function setLibrary(list){
+  themes = (Array.isArray(list) ? list : [])
+    .map(t => ({ name: String(t.name), items: Array.isArray(t.items) ? t.items : [] }))
+    .filter(t => t.items.length > 0);
+
+  byUrl.clear();
+  for (const t of themes){
+    for (const it of t.items) byUrl.set(it.url, { title: it.title, theme: t.name });
+  }
+  if (!themes.some(t => t.name === currentTheme)) currentTheme = themes[0]?.name ?? null;
+
+  renderThemeList();
+  renderGrid();
+  renderDock();
+}
+
+async function fetchPlaylist(){
+  const res = await fetch(`playlist.json?t=${Date.now()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`playlist.json ${res.status}`);
+  const data = await res.json();
+  if (!Array.isArray(data?.themes)) throw new Error("playlist.json inválido");
+  return data.themes;
+}
+
+async function loadLibrary(){
+  try{
+    const list = await fetchPlaylist();
+    writeJson(LS_CACHE, { themes: list, ts: Date.now() });
+    setLibrary(list);
+    return true;
+  }catch{
+    const cache = readJson(LS_CACHE, null);
+    if (Array.isArray(cache?.themes)){
+      setLibrary(cache.themes);
+      toast("Sem conexão: usando a lista salva neste aparelho.");
+    }else{
+      els.gridTitle.textContent = "Não foi possível carregar os sons";
+      els.grid.innerHTML = `<div class="empty">Verifique a internet e toque em ↻.</div>`;
+    }
+    return false;
+  }
+}
+
+/* após um envio, espera o GitHub Pages publicar os novos arquivos */
+function waitForPublish(urls){
+  for (const u of urls) pending.add(u);
+  updateTiles();
+  let tries = 0;
+  const check = async () => {
+    tries++;
+    try{
+      const list = await fetchPlaylist();
+      const published = new Set(list.flatMap(t => (t.items || []).map(i => i.url)));
+      if (urls.every(u => published.has(u))){
+        // o Pages publica tudo de uma vez: playlist nova = arquivos novos no ar
+        for (const u of urls) pending.delete(u);
+        writeJson(LS_CACHE, { themes: list, ts: Date.now() });
+        setLibrary(list);
+        toast("Novos sons prontos ✓");
+        return;
+      }
+    }catch{}
+    if (tries < 20) setTimeout(check, 15000);
+    else{
+      for (const u of urls) pending.delete(u);
+      updateTiles();
+    }
+  };
+  setTimeout(check, 20000);
+}
+
+/* ---------- início ---------- */
+function start(resume){
+  ensureAudio();
+  els.startScreen.hidden = true;
+  if (resume){
+    const last = readJson(LS_LAST, null);
+    if (last?.scene) applyScene({ ...last.scene, fx: [] });
+  }
+}
+
+function init(){
+  const last = readJson(LS_LAST, null);
+  if (last?.scene){
+    els.ambVol.value = clamp01(last.scene.ambientVol ?? 0.7);
+    els.fxVol.value = clamp01(last.scene.fxVol ?? 0.9);
+  }
+  currentTheme = last?.lastThemeName ?? null;
+
+  const lastCount = last?.scene?.ambients?.length || 0;
+  if (lastCount > 0){
+    els.resumeBtn.hidden = false;
+    els.resumeBtn.textContent = `▶ Continuar cena anterior (${lastCount} ${lastCount === 1 ? "som" : "sons"})`;
+    els.startBtn.textContent = "Começar em silêncio";
+  }
+  els.startBtn.addEventListener("click", () => start(false));
+  els.resumeBtn.addEventListener("click", () => start(true));
+
+  // iOS pode suspender o áudio ao trocar de app; qualquer toque reativa
+  document.addEventListener("pointerdown", () => {
+    if (ctx && ctx.state !== "running") ctx.resume().catch(() => {});
+  }, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") syncWakeLock();
   });
+
+  els.search.addEventListener("input", () => {
+    query = els.search.value.trim();
+    renderThemeList();
+    renderGrid();
+    els.main.scrollTop = 0;
+  });
+  els.refreshBtn.addEventListener("click", async () => {
+    if (await loadLibrary()) toast("Lista de sons atualizada ✓");
+  });
+  els.stopAllBtn.addEventListener("click", stopAll);
+  for (const slider of [els.ambVol, els.fxVol]){
+    slider.addEventListener("input", () => { applyMasterVolumes(); saveLastScene(); });
+  }
+
+  els.scenesBtn.addEventListener("click", () => { renderScenes(); els.scenesDlg.showModal(); });
+  els.saveSceneForm.addEventListener("submit", saveScene);
+
+  for (const dlg of document.querySelectorAll("dialog")){
+    dlg.querySelector("[data-close]")?.addEventListener("click", () => dlg.close());
+    // tocar fora da folha (no fundo escuro) fecha
+    dlg.addEventListener("click", (e) => {
+      if (e.target !== dlg) return;
+      const r = dlg.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!inside) dlg.close();
+    });
+  }
+
+  initUpload({
+    button: els.uploadBtn,
+    getThemes: () => themes.map(t => t.name),
+    getCurrentTheme: () => currentTheme,
+    toast,
+    onUploaded(list, urls, theme){
+      setLibrary(list);
+      openTheme(theme);
+      waitForPublish(urls);
+    },
+  });
+
+  renderDock();
+  loadLibrary();
 }
 
-els.saveSetBtn.addEventListener("click", saveSet);
-els.deleteSetBtn.addEventListener("click", deleteSet);
-els.applySetBtn.addEventListener("click", applySet);
-
-els.setSelect.addEventListener("change", () => {
-  const id = els.setSelect.value;
-  if (!id) return;
-  const s = readSets().sets.find(x => x.id === id);
-  if (s) els.setName.value = s.name;
-});
-
-refreshSetUI();
-restoreLastScene();
-loadLibraryPreferManifest();
+init();
