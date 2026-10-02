@@ -11,7 +11,7 @@ const REPO  = "test";
 const BRANCH = "main";
 const AUDIO_PATH = "audio";
 
-const EXT_OK = [".mp3", ".wav", ".ogg", ".m4a"];
+const EXT_OK = [".mp3", ".wav", ".ogg", ".m4a", ".mpeg"];
 
 const els = {
   status: document.getElementById("status"),
@@ -23,6 +23,7 @@ const els = {
 
   unlockBtn: document.getElementById("unlockBtn"),
   unlockDot: document.getElementById("unlockDot"),
+  unlockLabel: document.getElementById("unlockLabel"),
   ambientVol: document.getElementById("ambientVol"),
   fxVol: document.getElementById("fxVol"),
   stopAllAmbientBtn: document.getElementById("stopAllAmbientBtn"),
@@ -39,8 +40,6 @@ const els = {
   setName: document.getElementById("setName"),
 };
 
-let unlocked = false;
-
 const ambientPlayers = new Map(); // url -> Audio
 const fxPlayers = new Map();
 
@@ -50,6 +49,9 @@ const LS_CACHE = "jogatina_library_cache_v1"; // {themes:[...], ts}
 const LS_LAST = "jogatina_last_scene_v4";
 
 let trackVol = readJson(LS_TRACKVOL, {});
+let themes = [];
+let swapOptionsHtml = "";   // <option>s do "Trocar por…", montado 1x por biblioteca
+let libraryStatus = "";
 let lastTheme = null;
 
 function clamp01(v){ if (Number.isNaN(v)) return 1; return Math.max(0, Math.min(1, v)); }
@@ -77,12 +79,11 @@ function niceTitle(file){
     .trim();
 }
 
-function shortName(url){
-  try{
-    const last = decodeURIComponent(url.split("/").pop() || "");
-    return niceTitle(last).slice(0, 18);
-  }catch{ return "Áudio"; }
+function fileName(url){
+  try{ return decodeURIComponent(url.split("/").pop() || ""); }
+  catch{ return url.split("/").pop() || ""; }
 }
+function shortName(url){ return niceTitle(fileName(url)).slice(0, 18) || "Áudio"; }
 
 function getTrackVol(url){
   const v = trackVol?.[url];
@@ -100,6 +101,21 @@ function effectiveFxVol(url){
   return clamp01(getTrackVol(url) * parseFloat(els.fxVol.value));
 }
 
+function refreshVolumes(){
+  for (const [url, a] of ambientPlayers) a.volume = effectiveAmbientVol(url);
+  for (const [url, a] of fxPlayers) a.volume = effectiveFxVol(url);
+}
+
+/* Muda o volume individual e sincroniza todos os sliders da mesma faixa */
+function changeTrackVol(url, v, source){
+  setTrackVol(url, v);
+  refreshVolumes();
+  for (const el of document.querySelectorAll("input[data-vol-url]")){
+    if (el !== source && el.dataset.volUrl === url) el.value = getTrackVol(url);
+  }
+  saveLastScene();
+}
+
 function updateAmbientPill(){
   if (ambientPlayers.size === 0){ els.nowAmbients.textContent = "Ambientes: —"; return; }
   const names = [...ambientPlayers.keys()].slice(0,3).map(shortName);
@@ -108,163 +124,46 @@ function updateAmbientPill(){
 }
 function updateFxCount(){ els.fxCount.textContent = `Efeitos: ${fxPlayers.size}`; }
 
-/* now playing (trocar/volume individual) */
-function stopOneAmbient(url){
-  const a = ambientPlayers.get(url);
-  if (a){ try{ a.pause(); }catch(e){} }
-  ambientPlayers.delete(url);
-  updateAmbientPill();
-  renderNowPlaying();
-  saveLastScene();
-}
-function startAmbientByUrl(url){
-  if (!url || ambientPlayers.has(url)) return;
-  ensureUnlocked();
-  const a = new Audio(url);
-  a.loop = true;
-  a.preload = "auto";
-  a.volume = effectiveAmbientVol(url);
-  a.play().catch(()=>{});
-  ambientPlayers.set(url, a);
-  updateAmbientPill();
-  renderNowPlaying();
-  saveLastScene();
-}
-function swapAmbient(oldUrl, newUrl){
-  if (!newUrl || newUrl === oldUrl) return;
-
-  // mantém o volume individual do antigo no novo (se o novo ainda não tiver)
-  const oldV = getTrackVol(oldUrl);
-  if (trackVol[newUrl] == null) setTrackVol(newUrl, oldV);
-
-  stopOneAmbient(oldUrl);
-  startAmbientByUrl(newUrl);
-}
-
-function renderNowPlaying(){
-  if (!els.nowPlayingList) return;
-
-  const all = window.__ALL_TRACKS || [];
-  const mkOptions = () => {
-    const opts = ['<option value="">Trocar por…</option>'];
-    for (const t of all){
-      const label = `${t.theme} — ${t.title}`;
-      opts.push(`<option value="${escapeHtml(t.url)}">${escapeHtml(label)}</option>`);
-    }
-    return opts.join("");
-  };
-
-  els.nowPlayingList.innerHTML = "";
-
-  const ambUrls = [...ambientPlayers.keys()];
-  if (ambUrls.length === 0){
-    const div = document.createElement("div");
-    div.className = "status";
-    div.textContent = "Nenhum ambiente tocando.";
-    els.nowPlayingList.appendChild(div);
-    return;
+/* Atualiza botões/sliders da lista de faixas aberta sem recriá-la */
+function syncTrackList(){
+  for (const btn of els.tracks.querySelectorAll(".ambBtn")){
+    btn.textContent = ambientPlayers.has(btn.dataset.url) ? "Ambiente ✓" : "Ambiente+";
   }
-
-  for (const url of ambUrls){
-    const div = document.createElement("div");
-    div.className = "nowItem";
-
-    const currentVol = getTrackVol(url);
-
-    div.innerHTML = `
-      <div class="nowLeft">
-        <div class="nowTitle">${escapeHtml(shortName(url))}</div>
-        <div class="nowMeta">${escapeHtml(decodeURIComponent(url.split("/").pop() || ""))}</div>
-      </div>
-      <div class="nowRight">
-        <div class="volBox compact">
-          <label>Vol</label>
-          <input class="volSlider" type="range" min="0" max="1" step="0.01" value="${currentVol}">
-        </div>
-        <select class="swapSelect">
-          ${mkOptions()}
-        </select>
-        <button class="btn danger stopOne" type="button" title="Parar este ambiente">✕</button>
-      </div>
-    `;
-
-    const stopBtn = div.querySelector(".stopOne");
-    const sel = div.querySelector(".swapSelect");
-    const slider = div.querySelector(".volSlider");
-
-    stopBtn.addEventListener("click", () => stopOneAmbient(url));
-
-    sel.addEventListener("change", () => {
-      const newUrl = sel.value;
-      sel.value = "";
-      swapAmbient(url, newUrl);
-    });
-
-    slider.addEventListener("input", () => {
-      const v = clamp01(parseFloat(slider.value));
-      setTrackVol(url, v);
-      const amb = ambientPlayers.get(url);
-      if (amb) amb.volume = effectiveAmbientVol(url);
-      saveLastScene();
-    });
-
-    els.nowPlayingList.appendChild(div);
+  for (const el of els.tracks.querySelectorAll("input[data-vol-url]")){
+    el.value = getTrackVol(el.dataset.volUrl);
   }
+}
+
+function refreshUI(){
+  updateAmbientPill();
+  updateFxCount();
+  renderNowPlaying();
+  syncTrackList();
+  saveLastScene();
 }
 
 /* playback */
-function ensureUnlocked(){
-  /* iOS gate */
-  if (unlocked) return;
-  // só marca como desbloqueado quando usuário clicar no botão
-}
-
-function unlockAudio(){
-  try{
-    const a = new Audio();
-    a.muted = true;
-    a.play().catch(()=>{});
-  }catch(e){}
-  unlocked = true;
-  els.unlockDot.classList.add("on");
-}
-
-function toggleAmbient(track){
-  ensureUnlocked();
-  const url = track.url;
-
-  if (ambientPlayers.has(url)){
-    try{ ambientPlayers.get(url).pause(); }catch(e){}
-    ambientPlayers.delete(url);
-    updateAmbientPill();
-    renderNowPlaying();
-    saveLastScene();
-    return;
-  }
-
+function createAudio(url, loop, volume){
   const a = new Audio(url);
-  a.loop = true;
+  a.loop = loop;
   a.preload = "auto";
-  a.volume = effectiveAmbientVol(url);
+  a.volume = volume;
+  return a;
+}
+
+function startAmbient(url){
+  if (!url || ambientPlayers.has(url)) return;
+  const a = createAudio(url, true, effectiveAmbientVol(url));
+  // Se o iOS bloquear (sem toque do usuário), fica pausado e volta no "Liberar áudio"
   a.play().catch(()=>{});
   ambientPlayers.set(url, a);
-  updateAmbientPill();
-  renderNowPlaying();
-  saveLastScene();
+}
+function stopAmbient(url){
+  ambientPlayers.get(url)?.pause();
+  ambientPlayers.delete(url);
 }
 
-function stopAllAmbient(){
-  for (const a of ambientPlayers.values()){ try{ a.pause(); }catch(e){} }
-  ambientPlayers.clear();
-  updateAmbientPill();
-  renderNowPlaying();
-  saveLastScene();
-}
-
-function playFx(track){
-  ensureUnlocked();
-  const url = track.url;
-
+function startFx(url){
   const existing = fxPlayers.get(url);
   if (existing){
     existing.currentTime = 0;
@@ -273,26 +172,122 @@ function playFx(track){
     return;
   }
 
-  const a = new Audio(url);
-  a.preload = "auto";
-  a.volume = effectiveFxVol(url);
-  a.addEventListener("ended", () => {
+  const a = createAudio(url, false, effectiveFxVol(url));
+  const done = () => {
+    if (fxPlayers.get(url) !== a) return;
     fxPlayers.delete(url);
     updateFxCount();
     saveLastScene();
-  });
-
+  };
+  a.addEventListener("ended", done);
   fxPlayers.set(url, a);
+  // efeito que não conseguiu tocar não deve ficar preso no contador
+  a.play().catch(done);
+}
+
+function stopAllPlayers(){
+  for (const a of ambientPlayers.values()) a.pause();
+  for (const a of fxPlayers.values()) a.pause();
+  ambientPlayers.clear();
+  fxPlayers.clear();
+}
+
+function toggleAmbient(url){
+  if (ambientPlayers.has(url)) stopAmbient(url);
+  else startAmbient(url);
+  refreshUI();
+}
+
+function swapAmbient(oldUrl, newUrl){
+  if (!newUrl || newUrl === oldUrl || ambientPlayers.has(newUrl)) return;
+
+  // mantém o volume individual do antigo no novo (se o novo ainda não tiver)
+  if (trackVol[newUrl] == null) setTrackVol(newUrl, getTrackVol(oldUrl));
+
+  stopAmbient(oldUrl);
+  startAmbient(newUrl);
+  refreshUI();
+}
+
+function stopAllAmbient(){
+  for (const a of ambientPlayers.values()) a.pause();
+  ambientPlayers.clear();
+  refreshUI();
+}
+
+function playFx(url){
+  startFx(url);
   updateFxCount();
-  a.play().catch(()=>{});
   saveLastScene();
 }
 
 function clearFx(){
-  for (const a of fxPlayers.values()){ try{ a.pause(); }catch(e){} }
+  for (const a of fxPlayers.values()) a.pause();
   fxPlayers.clear();
   updateFxCount();
   saveLastScene();
+}
+
+function unlockAudio(){
+  // No iOS o play() só é liberado dentro de um toque; aproveita para retomar
+  // ambientes que ficaram pausados (ex.: cena restaurada ao abrir a página).
+  for (const a of ambientPlayers.values()){
+    if (a.paused) a.play().catch(()=>{});
+  }
+  els.unlockDot.classList.add("on");
+  els.unlockLabel.textContent = "Áudio liberado";
+}
+
+/* now playing (trocar/volume individual) */
+function renderNowPlaying(){
+  els.nowPlayingList.innerHTML = "";
+
+  if (ambientPlayers.size === 0){
+    const div = document.createElement("div");
+    div.className = "status";
+    div.textContent = "Nenhum ambiente tocando.";
+    els.nowPlayingList.appendChild(div);
+    return;
+  }
+
+  for (const url of ambientPlayers.keys()){
+    const div = document.createElement("div");
+    div.className = "nowItem";
+
+    div.innerHTML = `
+      <div class="nowLeft">
+        <div class="nowTitle">${escapeHtml(shortName(url))}</div>
+        <div class="nowMeta">${escapeHtml(fileName(url))}</div>
+      </div>
+      <div class="nowRight">
+        <div class="volBox compact">
+          <label>Vol</label>
+          <input class="volSlider" type="range" min="0" max="1" step="0.01" value="${getTrackVol(url)}" data-vol-url="${escapeHtml(url)}">
+        </div>
+        <select class="swapSelect">
+          <option value="">Trocar por…</option>
+          ${swapOptionsHtml}
+        </select>
+        <button class="btn danger stopOne" type="button" title="Parar este ambiente">✕</button>
+      </div>
+    `;
+
+    const sel = div.querySelector(".swapSelect");
+    const slider = div.querySelector(".volSlider");
+
+    div.querySelector(".stopOne").addEventListener("click", () => {
+      stopAmbient(url);
+      refreshUI();
+    });
+    sel.addEventListener("change", () => {
+      const newUrl = sel.value;
+      sel.value = "";
+      swapAmbient(url, newUrl);
+    });
+    slider.addEventListener("input", () => changeTrackVol(url, parseFloat(slider.value), slider));
+
+    els.nowPlayingList.appendChild(div);
+  }
 }
 
 /* GitHub API helpers (somente usado no botão Recarregar) */
@@ -302,46 +297,56 @@ async function ghFetch(url){
   return await res.json();
 }
 async function listDir(path){
-  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${path}?ref=${BRANCH}`;
+  const api = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURI(path)}?ref=${BRANCH}`;
   return await ghFetch(api);
 }
 
-function renderThemes(themes){
+function renderThemes(){
   els.themes.innerHTML = "";
   const filter = (els.themeFilter.value || "").trim().toLowerCase();
 
   const filtered = themes.filter(t => !filter || t.name.toLowerCase().includes(filter));
-  if (filtered.length === 0){
-    setStatus("Nenhum tema com esse filtro.");
-  }
+  setStatus(filtered.length === 0 ? "Nenhum tema com esse filtro." : libraryStatus);
 
   for (const theme of filtered){
     const div = document.createElement("div");
     div.className = "theme";
     div.innerHTML = `
       <div class="name">${escapeHtml(theme.name)}</div>
-      <div class="count">${theme.count || (theme.items?.length || 0)} arquivo(s)</div>
+      <div class="count">${theme.items?.length || 0} arquivo(s)</div>
     `;
     div.addEventListener("click", () => openTheme(theme));
     els.themes.appendChild(div);
   }
 }
 
-function flattenAllTracks(themes){
+function setLibrary(newThemes, source){
+  themes = newThemes;
+
   const all = [];
-  for (const t of (themes || [])){
-    for (const it of (t.items || [])){
-      all.push({ theme: t.name, title: it.title, file: it.file, url: it.url });
-    }
+  for (const t of themes){
+    for (const it of (t.items || [])) all.push({ theme: t.name, title: it.title, url: it.url });
   }
   all.sort((a,b)=>(a.theme + " " + a.title).localeCompare(b.theme + " " + b.title, "pt-BR"));
-  window.__ALL_TRACKS = all;
+  swapOptionsHtml = all
+    .map(t => `<option value="${escapeHtml(t.url)}">${escapeHtml(`${t.theme} — ${t.title}`)}</option>`)
+    .join("");
+
+  libraryStatus = `Pronto: ${themes.length} tema(s) (${source}).`;
+  renderThemes();
+  renderNowPlaying();
+
+  // reabre o tema que estava aberto (ou o da última sessão) com os dados novos
+  const name = lastTheme?.name ?? readJson(LS_LAST, null)?.lastThemeName;
+  const t = themes.find(x => x.name === name);
+  if (t) openTheme(t);
 }
 
 function openTheme(theme){
   lastTheme = theme;
   els.tracksTitle.textContent = `Tema: ${theme.name}`;
   els.tracks.innerHTML = "";
+  saveLastScene();
 
   const items = theme.items || [];
   if (items.length === 0){
@@ -356,9 +361,6 @@ function openTheme(theme){
     const row = document.createElement("div");
     row.className = "track";
 
-    const initialVol = getTrackVol(it.url);
-    const isAmbientOn = ambientPlayers.has(it.url);
-
     row.innerHTML = `
       <div class="left">
         <div class="title">${escapeHtml(it.title)}</div>
@@ -367,33 +369,17 @@ function openTheme(theme){
       <div class="right">
         <div class="volBox">
           <label>Vol</label>
-          <input class="trackVol" type="range" min="0" max="1" step="0.01" value="${initialVol}">
+          <input class="trackVol" type="range" min="0" max="1" step="0.01" value="${getTrackVol(it.url)}" data-vol-url="${escapeHtml(it.url)}">
         </div>
-        <button class="btn primary ambBtn" type="button">${isAmbientOn ? "Ambiente ✓" : "Ambiente+"}</button>
+        <button class="btn primary ambBtn" type="button" data-url="${escapeHtml(it.url)}">${ambientPlayers.has(it.url) ? "Ambiente ✓" : "Ambiente+"}</button>
         <button class="btn fxBtn" type="button">Efeito</button>
       </div>
     `;
 
     const volSlider = row.querySelector(".trackVol");
-    const ambBtn = row.querySelector(".ambBtn");
-    const fxBtn = row.querySelector(".fxBtn");
-
-    volSlider.addEventListener("input", () => {
-      const v = clamp01(parseFloat(volSlider.value));
-      setTrackVol(it.url, v);
-      const amb = ambientPlayers.get(it.url);
-      if (amb) amb.volume = effectiveAmbientVol(it.url);
-      const fx = fxPlayers.get(it.url);
-      if (fx) fx.volume = effectiveFxVol(it.url);
-      renderNowPlaying();
-      saveLastScene();
-    });
-
-    ambBtn.addEventListener("click", () => {
-      toggleAmbient(it);
-      ambBtn.textContent = ambientPlayers.has(it.url) ? "Ambiente ✓" : "Ambiente+";
-    });
-    fxBtn.addEventListener("click", () => playFx(it));
+    volSlider.addEventListener("input", () => changeTrackVol(it.url, parseFloat(volSlider.value), volSlider));
+    row.querySelector(".ambBtn").addEventListener("click", () => toggleAmbient(it.url));
+    row.querySelector(".fxBtn").addEventListener("click", () => playFx(it.url));
 
     els.tracks.appendChild(row);
   }
@@ -409,20 +395,11 @@ async function loadLibraryPreferManifest(){
     if (!Array.isArray(data?.themes)) throw new Error("playlist.json inválido (esperado: {themes:[...]})");
 
     writeJson(LS_CACHE, { themes: data.themes, ts: Date.now() });
-    window.__THEMES = data.themes;
-    flattenAllTracks(data.themes);
-    renderThemes(data.themes);
-    setStatus(`Pronto: ${data.themes.length} tema(s) (playlist.json).`);
-    renderNowPlaying();
-    return;
+    setLibrary(data.themes, "playlist.json");
   }catch(e){
     const cache = readJson(LS_CACHE, null);
-    if (cache?.themes){
-      window.__THEMES = cache.themes;
-      flattenAllTracks(cache.themes);
-      renderThemes(cache.themes);
-      setStatus(`Pronto: ${cache.themes.length} tema(s) (cache).`);
-      renderNowPlaying();
+    if (Array.isArray(cache?.themes)){
+      setLibrary(cache.themes, "cache");
       return;
     }
     setStatus("Falha ao carregar playlist.json e cache vazio. Use Recarregar (GitHub API).");
@@ -438,26 +415,23 @@ async function reloadFromGitHubAPI(){
     return;
   }
 
-  const themes = [];
+  const newThemes = [];
   for (const f of folders){
-    const children = await listDir(`${AUDIO_PATH}/${f.name}`);
+    const children = await listDir(f.path);
     const audios = children.filter(x => x.type === "file" && isAudioFile(x.name));
-    themes.push({
+    newThemes.push({
       name: f.name,
       count: audios.length,
-      items: audios.map(a => ({ title: niceTitle(a.name), file: a.name, url: a.download_url }))
+      // caminho relativo (igual ao playlist.json) para não perder volumes/sets salvos
+      items: audios.map(a => ({ title: niceTitle(a.name), file: a.name, url: a.path }))
     });
   }
 
-  window.__THEMES = themes;
-  flattenAllTracks(themes);
-  renderThemes(themes);
-  writeJson(LS_CACHE, { themes, ts: Date.now() });
-  setStatus(`Pronto: ${themes.length} tema(s) (GitHub API).`);
-  renderNowPlaying();
+  writeJson(LS_CACHE, { themes: newThemes, ts: Date.now() });
+  setLibrary(newThemes, "GitHub API");
 }
 
-/* sets */
+/* scenes / sets */
 function readSets(){
   const data = readJson(LS_SETS, { sets: [] });
   if (!Array.isArray(data.sets)) data.sets = [];
@@ -469,61 +443,51 @@ function writeSets(sets){
 function uid(){
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
 }
-function saveLastScene(){
-  const scene = {
+
+function currentScene(){
+  return {
     ambientVol: clamp01(parseFloat(els.ambientVol.value)),
     fxVol: clamp01(parseFloat(els.fxVol.value)),
     ambients: [...ambientPlayers.keys()],
     fx: [...fxPlayers.keys()],
     trackVol
   };
-  writeJson(LS_LAST, { scene, lastThemeName: lastTheme?.name || null });
 }
-function restoreLastScene(){
-  const data = readJson(LS_LAST, null);
-  if (!data?.scene) return;
 
-  els.ambientVol.value = clamp01(data.scene.ambientVol ?? 0.7);
-  els.fxVol.value = clamp01(data.scene.fxVol ?? 0.9);
+function applyScene(scene, { withFx }){
+  stopAllPlayers();
 
-  if (data.scene.trackVol && typeof data.scene.trackVol === "object"){
-    trackVol = data.scene.trackVol;
+  els.ambientVol.value = clamp01(scene.ambientVol ?? 0.7);
+  els.fxVol.value = clamp01(scene.fxVol ?? 0.9);
+
+  if (scene.trackVol && typeof scene.trackVol === "object"){
+    trackVol = { ...scene.trackVol };
     writeJson(LS_TRACKVOL, trackVol);
   }
 
-  for (const url of (data.scene.ambients || [])){
-    const a = new Audio(url);
-    a.loop = true;
-    a.preload = "auto";
-    a.volume = effectiveAmbientVol(url);
-    a.play().catch(()=>{});
-    ambientPlayers.set(url, a);
+  for (const url of (scene.ambients || [])) startAmbient(url);
+  if (withFx){
+    for (const url of (scene.fx || [])) startFx(url);
   }
+  refreshUI();
+}
 
-  for (const url of (data.scene.fx || [])){
-    const a = new Audio(url);
-    a.preload = "auto";
-    a.volume = effectiveFxVol(url);
-    a.addEventListener("ended", () => {
-      fxPlayers.delete(url);
-      updateFxCount();
-      saveLastScene();
-    });
-    fxPlayers.set(url, a);
-    a.play().catch(()=>{});
-  }
+function saveLastScene(){
+  writeJson(LS_LAST, { scene: currentScene(), lastThemeName: lastTheme?.name || null });
+}
 
-  updateAmbientPill();
-  updateFxCount();
-  renderNowPlaying();
-
-  // tenta abrir o último tema quando a lib estiver pronta (feito depois do load)
-  window.__LAST_THEME_NAME = data.lastThemeName || null;
+function restoreLastScene(){
+  const data = readJson(LS_LAST, null);
+  if (!data?.scene) return;
+  // efeitos são pontuais: não faz sentido tocá-los de novo ao reabrir a página
+  applyScene(data.scene, { withFx: false });
+  // applyScene salva a cena com lastTheme ainda vazio; preserva o tema anterior
+  writeJson(LS_LAST, { ...readJson(LS_LAST, {}), lastThemeName: data.lastThemeName || null });
 }
 
 function refreshSetUI(){
   const { sets } = readSets();
-  els.setSelect.innerHTML = `<option value="">Selecione…</option>` + sets.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  els.setSelect.innerHTML = `<option value="">Selecione…</option>` + sets.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join("");
 }
 
 function saveSet(){
@@ -531,13 +495,7 @@ function saveSet(){
   if (!name){ alert("Dê um nome para o set."); return; }
 
   const { sets } = readSets();
-  const scene = {
-    ambientVol: clamp01(parseFloat(els.ambientVol.value)),
-    fxVol: clamp01(parseFloat(els.fxVol.value)),
-    ambients: [...ambientPlayers.keys()],
-    fx: [...fxPlayers.keys()],
-    trackVol
-  };
+  const scene = currentScene();
 
   const existing = sets.find(x => x.name.toLowerCase() === name.toLowerCase());
   if (existing){
@@ -567,48 +525,8 @@ function deleteSet(){
 function applySet(){
   const id = els.setSelect.value;
   if (!id){ alert("Selecione um set para aplicar."); return; }
-  const { sets } = readSets();
-  const s = sets.find(x => x.id === id);
-  if (!s) return;
-
-  stopAllAmbient();
-  clearFx();
-
-  els.ambientVol.value = clamp01(s.scene.ambientVol ?? 0.7);
-  els.fxVol.value = clamp01(s.scene.fxVol ?? 0.9);
-
-  if (s.scene.trackVol && typeof s.scene.trackVol === "object"){
-    trackVol = s.scene.trackVol;
-    writeJson(LS_TRACKVOL, trackVol);
-  }
-
-  for (const url of (s.scene.ambients || [])){
-    const a = new Audio(url);
-    a.loop = true;
-    a.preload = "auto";
-    a.volume = effectiveAmbientVol(url);
-    a.play().catch(()=>{});
-    ambientPlayers.set(url, a);
-  }
-
-  for (const url of (s.scene.fx || [])){
-    const a = new Audio(url);
-    a.preload = "auto";
-    a.volume = effectiveFxVol(url);
-    a.addEventListener("ended", () => {
-      fxPlayers.delete(url);
-      updateFxCount();
-      saveLastScene();
-    });
-    fxPlayers.set(url, a);
-    a.play().catch(()=>{});
-  }
-
-  updateAmbientPill();
-  updateFxCount();
-  renderNowPlaying();
-  if (lastTheme) openTheme(lastTheme);
-  saveLastScene();
+  const s = readSets().sets.find(x => x.id === id);
+  if (s) applyScene(s.scene, { withFx: true });
 }
 
 /* reset vols */
@@ -616,40 +534,27 @@ function resetTrackVols(){
   if (!confirm("Resetar volumes individuais para 100%?")) return;
   trackVol = {};
   writeJson(LS_TRACKVOL, trackVol);
-  if (lastTheme) openTheme(lastTheme);
-  renderNowPlaying();
-  saveLastScene();
+  refreshVolumes();
+  refreshUI();
 }
 
 /* init */
-els.themeFilter.addEventListener("input", () => {
-  const themes = window.__THEMES || [];
-  renderThemes(themes);
-});
+els.themeFilter.addEventListener("input", renderThemes);
 els.reloadBtn.addEventListener("click", async () => {
   try{ await reloadFromGitHubAPI(); }
   catch(e){ setStatus("Falha ao recarregar via GitHub API (rate limit?)."); }
 });
-els.unlockBtn.addEventListener("click", () => {
-  unlockAudio();
-  els.unlockBtn.classList.add("primary");
-});
+els.unlockBtn.addEventListener("click", unlockAudio);
 els.stopAllAmbientBtn.addEventListener("click", stopAllAmbient);
 els.clearFxBtn.addEventListener("click", clearFx);
 els.resetTrackVolBtn.addEventListener("click", resetTrackVols);
 
-els.ambientVol.addEventListener("input", () => {
-  for (const [url, a] of ambientPlayers.entries()){
-    a.volume = effectiveAmbientVol(url);
-  }
-  saveLastScene();
-});
-els.fxVol.addEventListener("input", () => {
-  for (const [url, a] of fxPlayers.entries()){
-    a.volume = effectiveFxVol(url);
-  }
-  saveLastScene();
-});
+for (const slider of [els.ambientVol, els.fxVol]){
+  slider.addEventListener("input", () => {
+    refreshVolumes();
+    saveLastScene();
+  });
+}
 
 els.saveSetBtn.addEventListener("click", saveSet);
 els.deleteSetBtn.addEventListener("click", deleteSet);
@@ -658,20 +563,10 @@ els.applySetBtn.addEventListener("click", applySet);
 els.setSelect.addEventListener("change", () => {
   const id = els.setSelect.value;
   if (!id) return;
-  const { sets } = readSets();
-  const s = sets.find(x => x.id === id);
+  const s = readSets().sets.find(x => x.id === id);
   if (s) els.setName.value = s.name;
 });
 
 refreshSetUI();
 restoreLastScene();
-
-loadLibraryPreferManifest().then(() => {
-  // tenta abrir o último tema, se existir
-  const target = window.__LAST_THEME_NAME;
-  if (target && Array.isArray(window.__THEMES)){
-    const t = window.__THEMES.find(x => x.name === target);
-    if (t) openTheme(t);
-  }
-  renderNowPlaying();
-});
+loadLibraryPreferManifest();

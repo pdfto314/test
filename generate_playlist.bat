@@ -11,7 +11,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Get-ChildItem -Path $root -Directory | Sort-Object Name | ForEach-Object {" ^
   "  $tname = $_.Name;" ^
   "  $items = @();" ^
-  "  Get-ChildItem -Path $_.FullName -File | Where-Object { $_.Extension -match '^\.(mp3|wav|ogg|m4a)$' } | Sort-Object Name | ForEach-Object {" ^
+  "  Get-ChildItem -Path $_.FullName -File | Where-Object { $_.Extension -match '^\.(mp3|wav|ogg|m4a|mpeg)$' } | Sort-Object Name | ForEach-Object {" ^
   "    $file = $_.Name;" ^
   "    $title = [Regex]::Replace([IO.Path]::GetFileNameWithoutExtension($file), '[_-]+', ' ');" ^
   "    $url = ('audio/{0}/{1}' -f $tname, $file);" ^

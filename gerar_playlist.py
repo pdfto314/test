@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gera playlist.json para Jogatina Soundboard
+Gera playlist.json para Jogatina Soundboard (mesmo formato do generate_playlist.bat)
 
 Suporta:
 - audio/<Tema>/*.mp3
@@ -9,67 +9,63 @@ Suporta:
 
 Varre recursivamente dentro de cada tema (subpastas incluídas).
 Gera URLs com "/" (compatível com GitHub Pages).
+
+Uso: python gerar_playlist.py
 """
 
 from __future__ import annotations
 import json
-import os
+import re
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
+EXT_OK = {".mp3", ".wav", ".ogg", ".m4a", ".mpeg"}
+
 
 def find_audio_root(project_dir: Path) -> Path:
-    cand1 = project_dir / "audio" / "temas"
-    cand2 = project_dir / "audio"
-    if cand1.exists() and cand1.is_dir():
-        return cand1
-    if cand2.exists() and cand2.is_dir():
-        return cand2
+    for cand in (project_dir / "audio" / "temas", project_dir / "audio"):
+        if cand.is_dir():
+            return cand
     raise FileNotFoundError("Não achei 'audio/' nem 'audio/temas/'.")
 
-def rel_url(base_dir: Path, file_path: Path) -> str:
-    rel = file_path.relative_to(base_dir)
-    return rel.as_posix()
+
+def nice_title(file_name: str) -> str:
+    return re.sub(r"[_-]+", " ", Path(file_name).stem).strip()
+
 
 def build_playlist(project_dir: Path) -> Dict[str, Any]:
     audio_root = find_audio_root(project_dir)
 
-    # base_dir é a pasta do site (onde fica index.html), ou seja, project_dir
-    base_dir = project_dir
-
-    categories: List[Dict[str, Any]] = []
-    for theme_dir in sorted([p for p in audio_root.iterdir() if p.is_dir()], key=lambda p: p.name.lower()):
-        mp3_files = sorted(theme_dir.rglob("*.mp3"), key=lambda p: p.name.lower())
-        if not mp3_files:
+    themes: List[Dict[str, Any]] = []
+    for theme_dir in sorted((p for p in audio_root.iterdir() if p.is_dir()), key=lambda p: p.name.lower()):
+        files = sorted(
+            (f for f in theme_dir.rglob("*") if f.is_file() and f.suffix.lower() in EXT_OK),
+            key=lambda f: f.relative_to(theme_dir).as_posix().lower(),
+        )
+        if not files:
             continue
 
-        items: List[Dict[str, Any]] = []
-        for f in mp3_files:
-            title = f.stem
-            url = rel_url(base_dir, f)
+        items = [{
+            "title": nice_title(f.name),
+            "file": f.relative_to(theme_dir).as_posix(),
+            # URL relativa à pasta do site (onde fica index.html)
+            "url": f.relative_to(project_dir).as_posix(),
+        } for f in files]
 
-            items.append({
-                "title": title,
-                # Mantém "ambience" por padrão; você pode mudar depois na UI p/ efeito
-                "type": "ambience",
-                "url": url,
-                "loop": True,
-                "volume": 0.8,
-                "tags": [theme_dir.name],
-            })
+        themes.append({"name": theme_dir.name, "count": len(items), "items": items})
 
-        categories.append({
-            "name": theme_dir.name,
-            "items": items,
-        })
+    return {"themes": themes, "generated": datetime.now().isoformat(timespec="seconds")}
 
-    return {"categories": categories}
 
 def main() -> None:
     project_dir = Path(__file__).resolve().parent
     data = build_playlist(project_dir)
     out_path = project_dir / "playlist.json"
-    out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"OK: gerado {out_path} com {len(data['categories'])} tema(s).")
+    out_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    total = sum(t["count"] for t in data["themes"])
+    print(f"OK: gerado {out_path} com {len(data['themes'])} tema(s) e {total} arquivo(s).")
+
 
 if __name__ == "__main__":
     main()

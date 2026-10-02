@@ -7,6 +7,7 @@ Solução (esta versão):
 
 Como atualizar quando adicionar/remover/renomear áudios:
 1) No Windows, rode: generate_playlist.bat
+   (ou, com Python instalado, em qualquer sistema: python gerar_playlist.py)
 2) Isso gera/atualiza playlist.json
 3) Commit + Push
 4) No iPad, só dar refresh no link.
