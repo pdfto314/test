@@ -21,14 +21,24 @@ function repoInfo(){
 const { owner, repo } = repoInfo();
 const repoPath = `/repos/${owner}/${repo}`;
 
-/* mesmas regras do gerar_playlist.py, para o Action não reescrever o arquivo */
+/* mesmas regras do ferramentas/gerar_playlist.py, para o Action não reescrever o arquivo */
 function niceTitle(fileName){
   return fileName.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
 }
-const byLower = (key) => (a, b) => {
-  const x = key(a).toLowerCase(), y = key(b).toLowerCase();
-  return x < y ? -1 : x > y ? 1 : 0;
-};
+function sortKey(text){
+  return String(text).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+}
+function compare(a, b){
+  for (let i = 0; i < a.length; i++){
+    if (a[i] < b[i]) return -1;
+    if (a[i] > b[i]) return 1;
+  }
+  return 0;
+}
+function roundDuration(seconds){
+  return Math.round(seconds * 10) / 10;
+}
+const stem = (name) => name.replace(/\.[^.]+$/, "");
 
 function cleanName(name){
   return name.normalize("NFC")
@@ -57,6 +67,9 @@ function uniqueName(name, taken){
 function formatSize(bytes){
   return bytes > 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
+function escapeHtml(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+}
 
 function fileToBase64(file){
   return new Promise((resolve, reject) => {
@@ -71,8 +84,21 @@ function base64ToText(b64){
   const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
   return new TextDecoder().decode(bytes).replace(/^﻿/, "");
 }
+/* duração do áudio (o app usa para separar efeito curto de ambiente) */
+function readDuration(file){
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const a = new Audio();
+    const done = (v) => { URL.revokeObjectURL(url); resolve(v); };
+    a.preload = "metadata";
+    a.onloadedmetadata = () => done(isFinite(a.duration) ? roundDuration(a.duration) : null);
+    a.onerror = () => done(null);
+    setTimeout(() => done(null), 8000);
+    a.src = url;
+  });
+}
 
-export function initUpload({ button, getThemes, getCurrentTheme, toast, onUploaded }){
+export function initUpload({ button, getThemes, getGroups, getCurrentTheme, toast, onUploaded }){
   const $ = (id) => document.getElementById(id);
   const dlg = $("uploadDlg");
   const connectBox = $("connectBox");
@@ -80,7 +106,10 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
   const tokenInput = $("tokenInput");
   const uploadForm = $("uploadForm");
   const themeSelect = $("themeSelect");
-  const newThemeField = $("newThemeField");
+  const newThemeBox = $("newThemeBox");
+  const groupSelect = $("groupSelect");
+  const newGroupField = $("newGroupField");
+  const newGroupInput = $("newGroupInput");
   const newThemeInput = $("newThemeInput");
   const dropZone = $("dropZone");
   const fileInput = $("fileInput");
@@ -130,11 +159,33 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
   function fillThemes(){
     const themes = getThemes();
     const current = getCurrentTheme();
-    themeSelect.innerHTML =
-      themes.map(t => `<option value="${t.replaceAll('"', "&quot;")}">${t.replaceAll("<", "&lt;")}</option>`).join("") +
-      `<option value="__new">➕ Novo tema…</option>`;
-    themeSelect.value = themes.includes(current) ? current : (themes[0] ?? "__new");
-    newThemeField.hidden = themeSelect.value !== "__new";
+    const groups = [...new Set(themes.map(t => t.group))];
+    themeSelect.innerHTML = groups.map(g => `
+      <optgroup label="${escapeHtml(g || "Outros")}">
+        ${themes.filter(t => t.group === g).map(t => `<option value="${escapeHtml(t.key)}">${escapeHtml(t.name)}</option>`).join("")}
+      </optgroup>`).join("") + `<option value="__new">➕ Novo tema…</option>`;
+    themeSelect.value = themes.some(t => t.key === current) ? current : (themes[0]?.key ?? "__new");
+
+    groupSelect.innerHTML = getGroups().map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join("") +
+      `<option value="__new">➕ Novo grupo…</option>`;
+    syncNewFields();
+  }
+
+  function syncNewFields(){
+    newThemeBox.hidden = themeSelect.value !== "__new";
+    newGroupField.hidden = newThemeBox.hidden || groupSelect.value !== "__new";
+  }
+
+  /* grupo e tema escolhidos (existentes ou novos) */
+  function chosenTarget(){
+    if (themeSelect.value !== "__new"){
+      const t = getThemes().find(x => x.key === themeSelect.value);
+      return t ? { group: t.group, name: t.name } : null;
+    }
+    const group = groupSelect.value === "__new" ? cleanName(newGroupInput.value).slice(0, 40) : groupSelect.value;
+    const name = cleanName(newThemeInput.value).slice(0, 60);
+    if (!name || /^\.+$/.test(name) || (groupSelect.value === "__new" && (!group || /^\.+$/.test(group)))) return null;
+    return { group, name };
   }
 
   function renderFiles(){
@@ -204,37 +255,41 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
     }
   }
 
-  async function commitOnce(theme, blobs){
+  async function commitOnce(target, blobs){
     const ref = await gh(`${repoPath}/git/ref/heads/${BRANCH}`);
     const head = ref.object.sha;
     const commit = await gh(`${repoPath}/git/commits/${head}`);
     const playlist = await readPlaylist(head);
 
-    let entry = playlist.themes.find(t => t.name === theme);
+    let entry = playlist.themes.find(t => (t.group ?? "") === target.group && t.name === target.name);
     if (!entry){
-      entry = { name: theme, count: 0, items: [] };
+      entry = { name: target.name, group: target.group, count: 0, items: [] };
       playlist.themes.push(entry);
     }
     const taken = new Set(entry.items.map(i => String(i.file).toLowerCase()));
+    const dir = [AUDIO_DIR, target.group, ...target.name.split(" / ")].filter(Boolean).join("/");
 
     const tree = [];
     const urls = [];
     for (const b of blobs){
       const name = uniqueName(b.name, taken);
-      const path = `${AUDIO_DIR}/${theme}/${name}`;
+      const path = `${dir}/${name}`;
       tree.push({ path, mode: "100644", type: "blob", sha: b.sha });
-      entry.items.push({ title: niceTitle(name), file: name, url: path });
+      const item = { title: niceTitle(name), file: name, url: path };
+      if (b.duration != null) item.duration = b.duration;
+      entry.items.push(item);
       urls.push(path);
     }
-    entry.items.sort(byLower(i => i.file));
+    entry.items.sort((a, b) => compare([sortKey(stem(a.file)), sortKey(a.file)], [sortKey(stem(b.file)), sortKey(b.file)]));
     entry.count = entry.items.length;
-    playlist.themes.sort(byLower(t => t.name));
+    playlist.themes.sort((a, b) => compare([sortKey(a.group ?? ""), sortKey(a.name)], [sortKey(b.group ?? ""), sortKey(b.name)]));
     playlist.generated = new Date().toISOString().slice(0, 19);
 
     tree.push({ path: "playlist.json", mode: "100644", type: "blob", content: JSON.stringify(playlist, null, 2) + "\n" });
 
     const newTree = await gh(`${repoPath}/git/trees`, { method: "POST", body: { base_tree: commit.tree.sha, tree } });
-    const message = blobs.length === 1 ? `Adiciona som em ${theme}: ${blobs[0].name}` : `Adiciona ${blobs.length} sons em ${theme}`;
+    const where = target.group ? `${target.group}/${target.name}` : target.name;
+    const message = blobs.length === 1 ? `Adiciona som em ${where}: ${blobs[0].name}` : `Adiciona ${blobs.length} sons em ${where}`;
     const newCommit = await gh(`${repoPath}/git/commits`, { method: "POST", body: { message, tree: newTree.sha, parents: [head] } });
     await gh(`${repoPath}/git/refs/heads/${BRANCH}`, { method: "PATCH", body: { sha: newCommit.sha } });
     return { playlist, urls };
@@ -244,10 +299,10 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
     e.preventDefault();
     if (busy || files.length === 0) return;
 
-    const theme = cleanName(themeSelect.value === "__new" ? newThemeInput.value : themeSelect.value).slice(0, 60);
-    if (!theme || theme === "." || theme === ".."){
-      newThemeInput.focus();
-      toast("Dê um nome para o tema.");
+    const target = chosenTarget();
+    if (!target){
+      (newThemeInput.value.trim() ? newGroupInput : newThemeInput).focus();
+      toast("Dê um nome para o tema (e para o grupo, se for novo).");
       return;
     }
 
@@ -258,23 +313,25 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
       const blobs = [];
       for (const [i, f] of files.entries()){
         setStatus(`Enviando ${i + 1}/${files.length}: ${f.name}…`);
-        const blob = await gh(`${repoPath}/git/blobs`, { method: "POST", body: { content: await fileToBase64(f), encoding: "base64" } });
-        blobs.push({ name: cleanFileName(f.name), sha: blob.sha });
+        const [content, duration] = await Promise.all([fileToBase64(f), readDuration(f)]);
+        const blob = await gh(`${repoPath}/git/blobs`, { method: "POST", body: { content, encoding: "base64" } });
+        blobs.push({ name: cleanFileName(f.name), sha: blob.sha, duration });
       }
 
       // 2) cria o commit; se a branch mudou no meio do caminho, tenta de novo
       setStatus("Salvando no repositório…");
       let result;
       for (let attempt = 0; ; attempt++){
-        try{ result = await commitOnce(theme, blobs); break; }
+        try{ result = await commitOnce(target, blobs); break; }
         catch(err){ if (err.status === 422 && attempt < 2) continue; throw err; }
       }
 
       files = [];
       fileInput.value = "";
       newThemeInput.value = "";
+      newGroupInput.value = "";
       setStatus("Enviado ✓ Os sons aparecem em ~1 minuto.", "ok");
-      onUploaded(result.playlist.themes, result.urls, theme);
+      onUploaded(result.playlist.themes, result.urls, `${target.group}/${target.name}`);
       toast(`Enviado ✓ publicando ${result.urls.length} ${result.urls.length === 1 ? "som" : "sons"}…`, 4000);
     }catch(err){
       const why =
@@ -301,8 +358,12 @@ export function initUpload({ button, getThemes, getCurrentTheme, toast, onUpload
   connectForm.addEventListener("submit", connect);
   uploadForm.addEventListener("submit", send);
   themeSelect.addEventListener("change", () => {
-    newThemeField.hidden = themeSelect.value !== "__new";
-    if (!newThemeField.hidden) newThemeInput.focus();
+    syncNewFields();
+    if (!newThemeBox.hidden) newThemeInput.focus();
+  });
+  groupSelect.addEventListener("change", () => {
+    syncNewFields();
+    if (!newGroupField.hidden) newGroupInput.focus();
   });
   fileInput.addEventListener("change", () => addFiles([...fileInput.files]));
   disconnectBtn.addEventListener("click", () => {

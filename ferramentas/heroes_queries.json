@@ -6,7 +6,7 @@
   "license_filter": "",
   "categories": [
     {
-      "folder": "chuva",
+      "folder": "Ambientes/Chuva e Tempestade",
       "queries": [
         "rain ambience",
         "heavy rain ambience",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "folder": "dungeon",
+      "folder": "Ambientes/Cavernas e Masmorras",
       "queries": [
         "dungeon ambience",
         "cave drip ambience",
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "folder": "floresta",
+      "folder": "Ambientes/Floresta e Campos",
       "queries": [
         "forest night ambience",
         "dark woods ambience",
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "folder": "mar",
+      "folder": "Ambientes/Mar e Porto",
       "queries": [
         "ocean waves ambience",
         "sea storm ambience",
@@ -39,7 +39,7 @@
       ]
     },
     {
-      "folder": "tensão",
+      "folder": "Trilhas/Tensão e Mistério",
       "queries": [
         "tension drone ambience",
         "dark suspense ambience",
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "folder": "goblin",
+      "folder": "Criaturas/Goblin",
       "queries": [
         "goblin laugh",
         "small monster screech",
@@ -55,7 +55,7 @@
       ]
     },
     {
-      "folder": "warg",
+      "folder": "Criaturas/Warg",
       "queries": [
         "wolf growl",
         "warg growl",
@@ -64,7 +64,7 @@
       ]
     },
     {
-      "folder": "morto_vivo",
+      "folder": "Criaturas/Mortos-vivos",
       "queries": [
         "zombie moan",
         "undead groan",
@@ -73,7 +73,7 @@
       ]
     },
     {
-      "folder": "cultista",
+      "folder": "Trilhas/Cultistas",
       "queries": [
         "cult chanting ritual",
         "dark ritual chant ambience",
@@ -81,7 +81,7 @@
       ]
     },
     {
-      "folder": "aranha",
+      "folder": "Criaturas/Aranha",
       "queries": [
         "giant spider hiss",
         "insect creature hiss",
@@ -89,7 +89,7 @@
       ]
     },
     {
-      "folder": "dragao",
+      "folder": "Criaturas/Dragão",
       "queries": [
         "dragon roar",
         "dragon wing flap",
@@ -97,7 +97,7 @@
       ]
     },
     {
-      "folder": "batalha",
+      "folder": "Efeitos/Combate",
       "queries": [
         "medieval battle ambience",
         "sword clash",
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "folder": "emboscada",
+      "folder": "Ambientes/Floresta e Campos",
       "queries": [
         "forest ambush",
         "branches breaking run",
@@ -113,7 +113,7 @@
       ]
     },
     {
-      "folder": "ritual",
+      "folder": "Ambientes/Rituais Sombrios",
       "queries": [
         "dark ritual ambience",
         "magic circle chant",

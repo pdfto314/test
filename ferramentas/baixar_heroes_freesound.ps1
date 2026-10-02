@@ -1,7 +1,8 @@
 <#
 HEROES OF THE BORDERLANDS - Freesound auto downloader (previews)
 - Downloads preview-hq-mp3 files from Freesound API v2 search results
-- Saves into ./audio/<folder>/
+- Saves into ../audio/<Grupo>/<Tema>/ (pastas definidas em heroes_queries.json)
+- Acrescenta os créditos em ../credits.json (sem apagar os existentes)
 - Uses FREESOUND_API_KEY env var
 
 Usage:
@@ -11,10 +12,11 @@ Usage:
 
 $ErrorActionPreference = "Stop"
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$toolDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = Split-Path -Parent $toolDir   # pasta do site (onde ficam audio/ e credits.json)
 Set-Location $root
 
-$configPath = Join-Path $root "heroes_queries.json"
+$configPath = Join-Path $toolDir "heroes_queries.json"
 if (!(Test-Path $configPath)) { throw "Nao achei heroes_queries.json" }
 
 $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
@@ -108,13 +110,11 @@ foreach ($cat in $cfg.categories) {
         $count += 1
 
         $credits += [PSCustomObject]@{
-          folder = $folder
-          file = $safeName
+          file = ("audio/" + $folder + "/" + $safeName)
           title = $item.name
-          username = $item.username
+          author = $item.username
           license = $item.license
-          duration = $item.duration
-          freesound_url = $item.url
+          source = $item.url
         }
 
         Write-Host ("Downloaded: " + $safeName) -ForegroundColor Green
@@ -128,8 +128,12 @@ foreach ($cat in $cfg.categories) {
 }
 
 $creditsPath = Join-Path $root "credits.json"
-($credits | ConvertTo-Json -Depth 6) | Out-File -FilePath $creditsPath -Encoding utf8
+$existing = @()
+if (Test-Path $creditsPath) { $existing = @(Get-Content $creditsPath -Raw -Encoding UTF8 | ConvertFrom-Json) }
+$all = @($existing) + @($credits)
+$json = ConvertTo-Json -InputObject $all -Depth 6
+[IO.File]::WriteAllText($creditsPath, $json, (New-Object Text.UTF8Encoding $false))
 
 Write-Host ""
 Write-Host ("OK. Baixados: " + $downloaded + " arquivos") -ForegroundColor Green
-Write-Host "Agora rode generate_playlist.bat (ou use TUDO_EM_UM.bat)." -ForegroundColor Green
+Write-Host "Agora faca Commit + Push: o GitHub Action atualiza o playlist.json (ou rode generate_playlist.bat)." -ForegroundColor Green

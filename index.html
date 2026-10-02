@@ -33,7 +33,8 @@
       <div class="topActions">
         <button id="scenesBtn" class="btn" type="button">🎬 <span class="lbl">Cenas</span></button>
         <button id="uploadBtn" class="btn" type="button">＋ <span class="lbl">Sons</span></button>
-        <button id="refreshBtn" class="btn icon" type="button" aria-label="Atualizar lista de sons">↻</button>
+        <button id="refreshBtn" class="btn icon" type="button" aria-label="Atualizar lista de sons" title="Atualizar lista">↻</button>
+        <button id="creditsBtn" class="btn icon" type="button" aria-label="Créditos dos sons" title="Créditos">ⓘ</button>
       </div>
     </header>
 
@@ -43,7 +44,7 @@
       <main id="main" class="main">
         <div class="mainHead">
           <h1 id="gridTitle" class="gridTitle">Carregando…</h1>
-          <div class="legend"><b>Toque</b> = loop 🔁 &nbsp;·&nbsp; <b>1×</b> = toca uma vez</div>
+          <div class="legend"><span class="kindDot loop"></span>ambiente: toque liga o loop &nbsp; <span class="kindDot fx"></span>efeito: toque toca 1×</div>
         </div>
         <div id="grid" class="grid"></div>
       </main>
@@ -121,15 +122,25 @@
         <span>Tema</span>
         <select id="themeSelect" class="input"></select>
       </label>
-      <label class="field" id="newThemeField" hidden>
-        <span>Nome do novo tema</span>
-        <input id="newThemeInput" class="input" placeholder="Ex.: Taverna" maxlength="60" />
-      </label>
+      <div id="newThemeBox" class="newTheme" hidden>
+        <label class="field">
+          <span>Grupo</span>
+          <select id="groupSelect" class="input"></select>
+        </label>
+        <label class="field" id="newGroupField" hidden>
+          <span>Nome do novo grupo</span>
+          <input id="newGroupInput" class="input" placeholder="Ex.: Cidades" maxlength="40" />
+        </label>
+        <label class="field">
+          <span>Nome do novo tema</span>
+          <input id="newThemeInput" class="input" placeholder="Ex.: Taverna" maxlength="60" />
+        </label>
+      </div>
 
       <label id="dropZone" class="dropZone">
         <input id="fileInput" type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.mpeg" multiple hidden />
         <span class="dropIcon" aria-hidden="true">🎵</span>
-        <span><b>Escolher arquivos de áudio</b><br /><span class="muted small">mp3, m4a, wav, ogg — pode escolher vários</span></span>
+        <span><b>Escolher arquivos de áudio</b><br /><span class="muted small">mp3, m4a, wav, ogg · pode escolher vários · o nome do arquivo vira o nome do som</span></span>
       </label>
       <ul id="fileList" class="fileList"></ul>
 
@@ -140,6 +151,16 @@
         <button id="disconnectBtn" class="linkBtn" type="button">Desconectar</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- Créditos -->
+  <dialog id="creditsDlg" class="sheet">
+    <div class="sheetHead">
+      <div class="sheetTitle">ⓘ Créditos dos sons</div>
+      <button class="btn icon" type="button" data-close aria-label="Fechar">✕</button>
+    </div>
+    <p class="muted small">Sons do <a href="https://freesound.org" target="_blank" rel="noopener">Freesound</a> e de seus autores. Os demais são do acervo pessoal.</p>
+    <div id="creditsList" class="creditsList"></div>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

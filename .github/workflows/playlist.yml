@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - "audio/**"
-      - "gerar_playlist.py"
+      - "ferramentas/gerar_playlist.py"
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,9 @@ jobs:
           python-version: "3.x"
 
       - name: Gerar playlist.json
-        run: python gerar_playlist.py
+        run: |
+          pip install --quiet mutagen
+          python ferramentas/gerar_playlist.py
 
       - name: Commit se a lista de faixas mudou
         run: |

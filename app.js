@@ -1,19 +1,36 @@
 /* Jogatina Soundboard — feito para iPad
-   - Biblioteca vem do playlist.json (atualizado pelo GitHub Action / gerar_playlist.py)
-   - Toque no som = loop (ambiente) · botão 1× = toca uma vez (efeito)
+   - Biblioteca vem do playlist.json (audio/<Grupo>/<Tema>/<Som>.mp3)
+   - Sons curtos são efeitos (toque = toca 1×); longos são ambientes (toque = loop)
    - Volumes via Web Audio: no iPad o volume do <audio> é somente leitura
-   - Cenas e volumes salvos no aparelho (localStorage)
+   - Cenas, volumes e recentes salvos no aparelho (localStorage)
 */
 import { initUpload } from "./upload.js";
 
+const FX_MAX_SECONDS = 20;   // até isso, o som é tratado como efeito
 const FADE_IN = 1.2;
 const FADE_OUT = 0.8;
 const SCENE_FADE = 1.5;
+const RECENT_MAX = 16;
+const RECENT_KEY = "__recentes";
 
 const LS_TRACKVOL = "jogatina_track_vol_v1";  // { url: 0..1 }
 const LS_SETS = "jogatina_sets_v2";           // { sets:[{id,name,scene}] }
 const LS_CACHE = "jogatina_library_cache_v1"; // { themes, ts }
 const LS_LAST = "jogatina_last_scene_v4";     // { scene, lastThemeName }
+const LS_RECENT = "jogatina_recent_v1";       // [url]
+const LS_MIGRATED = "jogatina_paths_v2";      // pastas reorganizadas (renomeados.json) já aplicadas
+
+const GROUP_ORDER = ["Ambientes", "Trilhas", "Criaturas", "Efeitos"];
+const GROUP_ICONS = { Ambientes: "🌄", Trilhas: "🎻", Criaturas: "🐾", Efeitos: "💥", "": "📁" };
+const THEME_ICONS = [
+  [/aranha|spider/, "🕷️"], [/borderlands|cidade/, "🏰"], [/combate|espada/, "⚔️"], [/batalha|battle/, "🥁"],
+  [/cavalo|horse/, "🐎"], [/chuva|tempestade|rain/, "🌧️"], [/coruja|owl/, "🦉"], [/cult|seita/, "🕯️"],
+  [/drag/, "🐉"], [/caverna|masmorra|dungeon/, "🗝️"], [/floresta|campo|forest/, "🌲"], [/goblin|orc/, "👺"],
+  [/lobo|wolf/, "🐺"], [/warg/, "🐕"], [/mar\b|porto|ocean|navio/, "🌊"], [/minotauro/, "🐂"],
+  [/morto|zumbi|zombie|undead|esqueleto/, "🧟"], [/rato|rat/, "🐀"], [/ritua|magia|magic|infern/, "🔮"],
+  [/tensao|misterio|suspense|horror|medo/, "🌫️"], [/taverna|tavern/, "🍺"], [/fogo|fire|fogueira/, "🔥"],
+  [/vento|wind/, "💨"], [/musica|music|trilha/, "🎶"],
+];
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -21,6 +38,7 @@ const els = {
   scenesBtn: $("scenesBtn"),
   uploadBtn: $("uploadBtn"),
   refreshBtn: $("refreshBtn"),
+  creditsBtn: $("creditsBtn"),
   themeList: $("themeList"),
   main: $("main"),
   gridTitle: $("gridTitle"),
@@ -37,18 +55,10 @@ const els = {
   saveSceneForm: $("saveSceneForm"),
   sceneName: $("sceneName"),
   sceneList: $("sceneList"),
+  creditsDlg: $("creditsDlg"),
+  creditsList: $("creditsList"),
   toast: $("toast"),
 };
-
-const ICONS = [
-  [/aranha|spider/, "🕷️"], [/batalhas?_?sit|cidade|borderlands/, "🏰"], [/batalha|combate|battle/, "⚔️"],
-  [/cavalo|horse/, "🐎"], [/chuva|rain|tempestade/, "🌧️"], [/coruja|owl/, "🦉"], [/cult|seita/, "🕯️"],
-  [/drag/, "🐉"], [/dungeon|caverna|masmorra/, "🗝️"], [/floresta|forest|mata/, "🌲"], [/goblin|orc/, "👺"],
-  [/lobo|wolf/, "🐺"], [/warg/, "🐕"], [/mar|ocean|navio|porto/, "🌊"], [/minotauro/, "🐂"],
-  [/morto|zumbi|zombie|undead|esqueleto/, "🧟"], [/procura|busca|explora/, "🔎"], [/rato|rat/, "🐀"],
-  [/ritual|magia|magic/, "🔮"], [/tensao|suspense|medo|horror/, "😰"], [/taverna|tavern/, "🍺"],
-  [/fogo|fire|fogueira/, "🔥"], [/vento|wind/, "💨"], [/musica|music/, "🎶"],
-];
 
 /* ---------- utilidades ---------- */
 function readJson(key, fallback){
@@ -64,15 +74,31 @@ function escapeHtml(s){
     .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 function norm(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(); }
-function themeLabel(name){ return name.replace(/[_-]+/g, " ").trim(); }
 function themeIcon(name){
   const n = norm(name);
-  return ICONS.find(([re]) => re.test(n))?.[1] ?? "🎵";
+  return THEME_ICONS.find(([re]) => re.test(n))?.[1] ?? "🎵";
 }
-function niceTitle(url){
+function groupLabel(group){ return group || "Outros"; }
+function themeLabel(name){ return name.replaceAll("_", " "); }
+function fixMojibake(s){
+  // nomes salvos com codificação errada: "TÃ¼bingen" -> "Tübingen"
+  if (!/[ÃÂ]/.test(s)) return s;
+  try{ return decodeURIComponent(escape(s)); }catch{ return s; }
+}
+function displayTitle(title){
+  const t = fixMojibake(String(title)).replace(/\.(wav|flac|aiff?|mp3|ogg|m4a)$/i, "").replace(/\s+/g, " ").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1) || "Som";
+}
+function titleFromUrl(url){
   let file = url.split("/").pop() || "";
   try{ file = decodeURIComponent(file); }catch{}
-  return file.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim() || "Som";
+  return displayTitle(file.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " "));
+}
+function formatDuration(sec){
+  if (typeof sec !== "number") return "";
+  if (sec < 60) return `${Math.max(1, Math.round(sec))} s`;
+  const total = Math.round(sec);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
 let toastTimer = 0;
@@ -84,26 +110,22 @@ function toast(msg, ms = 2600){
 }
 
 /* ---------- estado ---------- */
-let themes = [];                 // [{ name, items:[{title,file,url}] }]
-let currentTheme = null;
+let themes = [];                 // [{ key, name, group, items:[{title,file,url,duration}] }]
+let currentTheme = null;         // key do tema aberto, ou RECENT_KEY
 let query = "";
 let trackVol = readJson(LS_TRACKVOL, {});
-let pending = new Set();         // sons recém-enviados que o GitHub Pages ainda está publicando
-const byUrl = new Map();         // url -> { title, theme }
+let recent = readJson(LS_RECENT, []);
+const pending = new Set();       // sons recém-enviados que o GitHub Pages ainda está publicando
+const byUrl = new Map();         // url -> { item, theme }
 const loops = new Map();         // url -> player (ambiente em loop)
 const shots = new Map();         // url -> player (efeito, toca 1×)
 
-/* "rain_ambience.wav" -> "Rain ambience" (nomes de arquivo viram títulos legíveis) */
-function fixMojibake(s){
-  // nomes salvos com codificação errada: "TÃ¼bingen" -> "Tübingen"
-  if (!/[ÃÂ]/.test(s)) return s;
-  try{ return decodeURIComponent(escape(s)); }catch{ return s; }
+const themeKey = (group, name) => `${group}/${name}`;
+const titleOf = (url) => displayTitle(byUrl.get(url)?.item.title ?? titleFromUrl(url));
+function isFx(url){
+  const d = byUrl.get(url)?.item.duration;
+  return typeof d === "number" && d <= FX_MAX_SECONDS;
 }
-function displayTitle(title){
-  const t = fixMojibake(String(title)).replace(/\.(wav|flac|aiff?|mp3|ogg|m4a)$/i, "").replace(/\s+/g, " ").trim();
-  return t.charAt(0).toUpperCase() + t.slice(1);
-}
-const titleOf = (url) => displayTitle(byUrl.get(url)?.title ?? niceTitle(url));
 
 /* ---------- motor de áudio ---------- */
 let ctx = null, ambBus = null, fxBus = null;
@@ -175,10 +197,19 @@ function failed(map, p){
   changed();
 }
 
+function remember(url){
+  recent = [url, ...recent.filter(u => u !== url)].slice(0, RECENT_MAX);
+  writeJson(LS_RECENT, recent);
+  const count = els.themeList.querySelector(`[data-key="${RECENT_KEY}"] .themeCount`);
+  if (count) count.textContent = String(recent.filter(u => byUrl.has(u)).length);
+  else renderThemeList();   // primeira vez: aparece o item "Recentes"
+}
+
 function startLoop(url){
   if (loops.has(url)) return;
   const p = createPlayer(url, true);
   loops.set(url, p);
+  remember(url);
   p.el.addEventListener("error", () => failed(loops, p));
   p.el.play()
     .then(() => { if (loops.get(url) === p) ramp(p.gain.gain, getVol(url), FADE_IN); })
@@ -198,6 +229,7 @@ function toggleLoop(url){
 }
 
 function playShot(url){
+  remember(url);
   const existing = shots.get(url);
   if (existing){
     existing.el.currentTime = 0;
@@ -229,6 +261,16 @@ function stopAll(){
   for (const url of [...loops.keys()]) stopLoop(url);
   for (const url of [...shots.keys()]) stopShot(url);
   changed();
+}
+
+/* toque principal do card: efeito toca 1×, ambiente liga/desliga o loop */
+function primaryAction(url){
+  if (isFx(url)) playShot(url);
+  else toggleLoop(url);
+}
+function secondaryAction(url){
+  if (isFx(url)) toggleLoop(url);
+  else playShot(url);
 }
 
 /* mantém a tela do iPad acesa enquanto houver som tocando */
@@ -294,15 +336,19 @@ function renderScenes(){
   const sets = readSets();
   els.sceneList.innerHTML = "";
   if (sets.length === 0){
-    els.sceneList.innerHTML = `<div class="empty">Nenhuma cena salva ainda.<br>Toque alguns sons e salve aqui.</div>`;
+    els.sceneList.innerHTML = `<div class="empty">Nenhuma cena salva ainda.<br>Ligue alguns ambientes e salve aqui.</div>`;
     return;
   }
   for (const s of sets){
-    const n = s.scene?.ambients?.length || 0;
+    const urls = s.scene?.ambients || [];
+    const names = urls.slice(0, 3).map(titleOf).join(" · ") + (urls.length > 3 ? ` +${urls.length - 3}` : "");
     const row = document.createElement("div");
     row.className = "sceneItem";
     row.innerHTML = `
-      <button class="sceneApply" type="button"><b>${escapeHtml(s.name)}</b><span>${n} ${n === 1 ? "som" : "sons"}</span></button>
+      <button class="sceneApply" type="button">
+        <b>${escapeHtml(s.name)}</b>
+        <span>${escapeHtml(names || "vazia")}</span>
+      </button>
       <button class="btn danger sceneDel" type="button" aria-label="Excluir cena">🗑</button>`;
     row.querySelector(".sceneApply").addEventListener("click", () => {
       applyScene(s.scene || {});
@@ -322,7 +368,7 @@ function saveScene(e){
   e.preventDefault();
   const name = els.sceneName.value.trim();
   if (!name){ els.sceneName.focus(); return; }
-  if (loops.size === 0){ toast("Toque alguns sons em loop antes de salvar a cena."); return; }
+  if (loops.size === 0){ toast("Ligue alguns ambientes antes de salvar a cena."); return; }
 
   const sets = readSets();
   const scene = JSON.parse(JSON.stringify(currentScene()));
@@ -343,68 +389,104 @@ function saveScene(e){
 function changed(){
   updateTiles();
   renderDock();
-  renderThemeList();
+  updateLiveDots();
   saveLastScene();
   syncWakeLock();
 }
 
-function playingThemes(){
+function playingThemeKeys(){
   const set = new Set();
   for (const url of [...loops.keys(), ...shots.keys()]){
     const t = byUrl.get(url)?.theme;
-    if (t) set.add(t);
+    if (t) set.add(t.key);
   }
   return set;
 }
 
+function sortedGroups(){
+  const groups = [...new Set(themes.map(t => t.group))];
+  const rank = (g) => { const i = GROUP_ORDER.indexOf(g); return i < 0 ? (g ? 100 : 200) : i; };
+  return groups.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, "pt-BR"));
+}
+
+function themeButton(key, icon, label, count){
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "themeBtn" + (!query && key === currentTheme ? " active" : "");
+  btn.dataset.key = key;
+  btn.innerHTML = `
+    <span class="themeIcon">${icon}</span>
+    <span class="themeName">${escapeHtml(label)}</span>
+    <span class="liveDot" hidden></span>
+    <span class="themeCount">${count}</span>`;
+  btn.addEventListener("click", () => openTheme(key));
+  return btn;
+}
+
 function renderThemeList(){
-  const live = playingThemes();
   els.themeList.innerHTML = "";
-  for (const t of themes){
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "themeBtn" + (!query && t.name === currentTheme ? " active" : "");
-    btn.innerHTML = `
-      <span class="themeIcon">${themeIcon(t.name)}</span>
-      <span class="themeName">${escapeHtml(themeLabel(t.name))}</span>
-      ${live.has(t.name) ? `<span class="liveDot" title="Tocando"></span>` : ""}
-      <span class="themeCount">${t.items.length}</span>`;
-    btn.addEventListener("click", () => openTheme(t.name));
-    els.themeList.appendChild(btn);
+  const frag = document.createDocumentFragment();
+
+  const recentCount = recent.filter(u => byUrl.has(u)).length;
+  if (recentCount){
+    frag.appendChild(themeButton(RECENT_KEY, "🕘", "Recentes", recentCount));
+  }
+  for (const group of sortedGroups()){
+    const head = document.createElement("div");
+    head.className = "groupHead";
+    head.textContent = `${GROUP_ICONS[group] ?? "📁"} ${groupLabel(group)}`;
+    frag.appendChild(head);
+    for (const t of themes.filter(x => x.group === group)){
+      frag.appendChild(themeButton(t.key, themeIcon(t.name), themeLabel(t.name), t.items.length));
+    }
+  }
+  els.themeList.appendChild(frag);
+  updateLiveDots();
+}
+
+function updateLiveDots(){
+  const live = playingThemeKeys();
+  for (const btn of els.themeList.querySelectorAll(".themeBtn")){
+    btn.querySelector(".liveDot").hidden = !live.has(btn.dataset.key);
   }
 }
 
-function openTheme(name){
-  currentTheme = name;
+function openTheme(key){
+  currentTheme = key;
   query = "";
   els.search.value = "";
-  renderThemeList();
+  for (const btn of els.themeList.querySelectorAll(".themeBtn")){
+    btn.classList.toggle("active", btn.dataset.key === key);
+  }
   renderGrid();
   els.main.scrollTop = 0;
   saveLastScene();
 }
 
-function renderGrid(){
-  let list = [];
-  const showTheme = Boolean(query);
-
+function gridEntries(){
   if (query){
     const q = norm(query);
+    const list = [];
     for (const t of themes){
+      const themeHit = norm(t.name).includes(q) || norm(t.group).includes(q);
       for (const it of t.items){
-        if (norm(it.title).includes(q) || norm(themeLabel(t.name)).includes(q)) list.push([it, t.name]);
+        if (themeHit || norm(it.title).includes(q)) list.push(it);
       }
     }
-    els.gridTitle.textContent = `🔎 “${query}” · ${list.length}`;
-  }else{
-    const t = themes.find(x => x.name === currentTheme);
-    if (t){
-      list = t.items.map(it => [it, t.name]);
-      els.gridTitle.textContent = `${themeIcon(t.name)} ${themeLabel(t.name)}`;
-    }else{
-      els.gridTitle.textContent = themes.length ? "Escolha um tema" : "Nenhum som ainda";
-    }
+    return { title: `🔎 “${query}”`, sub: `${list.length} ${list.length === 1 ? "som" : "sons"}`, list, showTheme: true };
   }
+  if (currentTheme === RECENT_KEY){
+    const list = recent.filter(u => byUrl.has(u)).map(u => byUrl.get(u).item);
+    return { title: "🕘 Recentes", sub: "os últimos que você tocou", list, showTheme: true };
+  }
+  const t = themes.find(x => x.key === currentTheme);
+  if (!t) return { title: themes.length ? "Escolha um tema" : "Nenhum som ainda", sub: "", list: [], showTheme: false };
+  return { title: `${themeIcon(t.name)} ${themeLabel(t.name)}`, sub: groupLabel(t.group), list: t.items, showTheme: false };
+}
+
+function renderGrid(){
+  const { title, sub, list, showTheme } = gridEntries();
+  els.gridTitle.innerHTML = `${escapeHtml(title)}${sub ? ` <small>${escapeHtml(sub)}</small>` : ""}`;
 
   els.grid.innerHTML = "";
   if (list.length === 0){
@@ -412,24 +494,34 @@ function renderGrid(){
     return;
   }
 
+  // num tema, efeitos primeiro (ficam à mão), depois ambientes/trilhas
+  const ordered = showTheme ? list : [...list.filter(it => isFx(it.url)), ...list.filter(it => !isFx(it.url))];
+
   const frag = document.createDocumentFragment();
-  for (const [it, themeName] of list){
+  for (const it of ordered){
+    const fx = isFx(it.url);
+    const theme = byUrl.get(it.url)?.theme;
     const tile = document.createElement("div");
-    tile.className = "tile";
+    tile.className = `tile ${fx ? "fx" : "loop"}`;
     tile.dataset.url = it.url;
     tile.setAttribute("role", "button");
+    tile.setAttribute("aria-label", `${displayTitle(it.title)} (${fx ? "efeito" : "ambiente"})`);
     tile.innerHTML = `
       <div class="tileTop">
+        <span class="kind">${fx ? "💥 Efeito" : "🔁 Ambiente"}</span>
         <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-        ${showTheme ? `<span class="tileTheme">${themeIcon(themeName)} ${escapeHtml(themeLabel(themeName))}</span>` : ""}
       </div>
       <div class="tileName">${escapeHtml(displayTitle(it.title))}</div>
-      <button class="once" type="button" aria-label="Tocar uma vez">1×</button>
+      <div class="tileMeta">
+        ${showTheme && theme ? `<span class="tileTheme">${themeIcon(theme.name)} ${escapeHtml(themeLabel(theme.name))}</span>` : ""}
+        <span class="tileDur">${formatDuration(it.duration)}</span>
+      </div>
+      <button class="alt" type="button" aria-label="${fx ? "Tocar em loop" : "Tocar uma vez"}" title="${fx ? "Tocar em loop" : "Tocar uma vez"}">${fx ? "🔁" : "1×"}</button>
       <div class="prog"><span></span></div>`;
-    tile.addEventListener("click", () => toggleLoop(it.url));
-    tile.querySelector(".once").addEventListener("click", (e) => {
+    tile.addEventListener("click", () => primaryAction(it.url));
+    tile.querySelector(".alt").addEventListener("click", (e) => {
       e.stopPropagation();
-      playShot(it.url);
+      secondaryAction(it.url);
     });
     frag.appendChild(tile);
   }
@@ -467,12 +559,13 @@ function renderDock(){
   }
 
   const card = (url, kind) => {
+    const theme = byUrl.get(url)?.theme;
     const div = document.createElement("div");
     div.className = `dockCard ${kind}`;
     div.dataset.url = url;
     div.innerHTML = `
       <div class="dcTop">
-        <span aria-hidden="true">${kind === "loop" ? "🔁" : "💥"}</span>
+        <span class="dcIcon" aria-hidden="true">${theme ? themeIcon(theme.name) : (kind === "loop" ? "🔁" : "💥")}</span>
         <span class="dcName">${escapeHtml(titleOf(url))}</span>
         <button class="dcStop" type="button" aria-label="Parar">✕</button>
       </div>
@@ -491,17 +584,51 @@ function renderDock(){
   for (const url of shots.keys()) els.dockList.appendChild(card(url, "shot"));
 }
 
+/* ---------- créditos ---------- */
+function licenseLabel(url){
+  if (!url) return "";
+  if (/publicdomain\/zero/.test(url)) return "CC0";
+  const m = url.match(/licenses\/([a-z-]+)\/([\d.]+)/);
+  return m ? `CC ${m[1].toUpperCase()} ${m[2]}` : "licença";
+}
+async function showCredits(){
+  els.creditsDlg.showModal();
+  if (els.creditsList.dataset.loaded) return;
+  els.creditsList.innerHTML = `<div class="muted">Carregando…</div>`;
+  try{
+    const res = await fetch(`credits.json?t=${Date.now()}`, { cache: "no-store" });
+    const list = await res.json();
+    list.sort((a, b) => titleOf(a.file).localeCompare(titleOf(b.file), "pt-BR"));
+    els.creditsList.innerHTML = list.map(c => `
+      <div class="credit">
+        <div><b>${escapeHtml(titleOf(c.file))}</b>${c.title ? ` <span class="muted">· ${escapeHtml(fixMojibake(c.title))}</span>` : ""}</div>
+        <div class="muted small">
+          ${c.author ? `por ${escapeHtml(c.author)} · ` : ""}${c.license ? `<a href="${escapeHtml(c.license)}" target="_blank" rel="noopener">${licenseLabel(c.license)}</a> · ` : ""}<a href="${escapeHtml(c.source)}" target="_blank" rel="noopener">fonte</a>
+        </div>
+      </div>`).join("");
+    els.creditsList.dataset.loaded = "1";
+  }catch{
+    els.creditsList.innerHTML = `<div class="muted">Não foi possível carregar os créditos.</div>`;
+  }
+}
+
 /* ---------- biblioteca ---------- */
 function setLibrary(list){
   themes = (Array.isArray(list) ? list : [])
-    .map(t => ({ name: String(t.name), items: Array.isArray(t.items) ? t.items : [] }))
-    .filter(t => t.items.length > 0);
+    .map(t => ({
+      name: String(t.name),
+      group: String(t.group ?? ""),
+      items: Array.isArray(t.items) ? t.items : [],
+    }))
+    .filter(t => t.items.length > 0)
+    .map(t => ({ ...t, key: themeKey(t.group, t.name) }));
 
   byUrl.clear();
   for (const t of themes){
-    for (const it of t.items) byUrl.set(it.url, { title: it.title, theme: t.name });
+    for (const it of t.items) byUrl.set(it.url, { item: it, theme: t });
   }
-  if (!themes.some(t => t.name === currentTheme)) currentTheme = themes[0]?.name ?? null;
+  const valid = currentTheme === RECENT_KEY ? recent.some(u => byUrl.has(u)) : themes.some(t => t.key === currentTheme);
+  if (!valid) currentTheme = themes[0]?.key ?? null;
 
   renderThemeList();
   renderGrid();
@@ -563,6 +690,35 @@ function waitForPublish(urls){
   setTimeout(check, 20000);
 }
 
+/* as pastas foram reorganizadas: atualiza volumes, cenas e recentes salvos no aparelho */
+async function migrateSavedPaths(){
+  if (localStorage.getItem(LS_MIGRATED)) return;
+  const hasData = [LS_TRACKVOL, LS_SETS, LS_LAST, LS_RECENT].some(k => localStorage.getItem(k));
+  if (hasData){
+    try{
+      const res = await fetch("renomeados.json", { cache: "no-store" });
+      if (!res.ok) return;
+      const map = await res.json();
+      const fix = (u) => map[String(u).normalize("NFC")] ?? map[u] ?? u;
+      const fixVols = (obj) => Object.fromEntries(Object.entries(obj || {}).map(([u, v]) => [fix(u), v]));
+      const fixScene = (sc) => sc && ({ ...sc,
+        ambients: (sc.ambients || []).map(fix),
+        fx: (sc.fx || []).map(fix),
+        trackVol: fixVols(sc.trackVol),
+      });
+
+      trackVol = fixVols(trackVol);
+      writeJson(LS_TRACKVOL, trackVol);
+      writeSets(readSets().map(s => ({ ...s, scene: fixScene(s.scene) })));
+      const last = readJson(LS_LAST, null);
+      if (last?.scene) writeJson(LS_LAST, { ...last, scene: fixScene(last.scene), lastThemeName: null });
+      recent = [...new Set(recent.map(fix))];
+      writeJson(LS_RECENT, recent);
+    }catch{ return; }
+  }
+  try{ localStorage.setItem(LS_MIGRATED, "1"); }catch{}
+}
+
 /* ---------- início ---------- */
 function start(resume){
   ensureAudio();
@@ -573,20 +729,7 @@ function start(resume){
   }
 }
 
-function init(){
-  const last = readJson(LS_LAST, null);
-  if (last?.scene){
-    els.ambVol.value = clamp01(last.scene.ambientVol ?? 0.7);
-    els.fxVol.value = clamp01(last.scene.fxVol ?? 0.9);
-  }
-  currentTheme = last?.lastThemeName ?? null;
-
-  const lastCount = last?.scene?.ambients?.length || 0;
-  if (lastCount > 0){
-    els.resumeBtn.hidden = false;
-    els.resumeBtn.textContent = `▶ Continuar cena anterior (${lastCount} ${lastCount === 1 ? "som" : "sons"})`;
-    els.startBtn.textContent = "Começar em silêncio";
-  }
+async function init(){
   els.startBtn.addEventListener("click", () => start(false));
   els.resumeBtn.addEventListener("click", () => start(true));
 
@@ -600,7 +743,9 @@ function init(){
 
   els.search.addEventListener("input", () => {
     query = els.search.value.trim();
-    renderThemeList();
+    for (const btn of els.themeList.querySelectorAll(".themeBtn")){
+      btn.classList.toggle("active", !query && btn.dataset.key === currentTheme);
+    }
     renderGrid();
     els.main.scrollTop = 0;
   });
@@ -614,6 +759,7 @@ function init(){
 
   els.scenesBtn.addEventListener("click", () => { renderScenes(); els.scenesDlg.showModal(); });
   els.saveSceneForm.addEventListener("submit", saveScene);
+  els.creditsBtn.addEventListener("click", showCredits);
 
   for (const dlg of document.querySelectorAll("dialog")){
     dlg.querySelector("[data-close]")?.addEventListener("click", () => dlg.close());
@@ -628,18 +774,36 @@ function init(){
 
   initUpload({
     button: els.uploadBtn,
-    getThemes: () => themes.map(t => t.name),
+    getThemes: () => themes.map(t => ({ group: t.group, name: t.name, key: t.key })),
+    getGroups: () => sortedGroups().filter(Boolean),
     getCurrentTheme: () => currentTheme,
     toast,
-    onUploaded(list, urls, theme){
+    onUploaded(list, urls, key){
       setLibrary(list);
-      openTheme(theme);
+      openTheme(key);
       waitForPublish(urls);
     },
   });
 
   renderDock();
-  loadLibrary();
+
+  // dados salvos no aparelho (com caminhos atualizados para as pastas novas)
+  await migrateSavedPaths();
+  const last = readJson(LS_LAST, null);
+  if (last?.scene){
+    els.ambVol.value = clamp01(last.scene.ambientVol ?? 0.7);
+    els.fxVol.value = clamp01(last.scene.fxVol ?? 0.9);
+  }
+  currentTheme = last?.lastThemeName ?? null;
+
+  const lastCount = last?.scene?.ambients?.length || 0;
+  if (lastCount > 0){
+    els.resumeBtn.hidden = false;
+    els.resumeBtn.textContent = `▶ Continuar cena anterior (${lastCount} ${lastCount === 1 ? "som" : "sons"})`;
+    els.startBtn.textContent = "Começar em silêncio";
+  }
+
+  await loadLibrary();
 }
 
 init();

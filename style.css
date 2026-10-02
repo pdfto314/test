@@ -44,6 +44,7 @@ button{ touch-action: manipulation; }
   height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .topbar{
@@ -86,6 +87,7 @@ button{ touch-action: manipulation; }
   display: grid;
   grid-template-columns: 250px 1fr;
 }
+.content > *{ min-width: 0; }   /* impede a faixa de temas de alargar a página no modo retrato */
 
 /* ---------- temas ---------- */
 .themeList{
@@ -97,6 +99,16 @@ button{ touch-action: manipulation; }
   flex-direction: column;
   gap: 4px;
 }
+.groupHead{
+  white-space: nowrap;
+  margin: 14px 12px 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.groupHead:first-child{ margin-top: 2px; }
 .themeBtn{
   display: flex;
   align-items: center;
@@ -114,6 +126,7 @@ button{ touch-action: manipulation; }
 .themeIcon{ font-size: 22px; width: 28px; text-align: center; flex: none; }
 .themeName{ flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .themeCount{ color: var(--muted); font-size: 13px; }
+.liveDot[hidden]{ display: none !important; }
 .liveDot{
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--accent);
@@ -136,8 +149,12 @@ button{ touch-action: manipulation; }
   gap: 4px 16px;
   margin-bottom: 14px;
 }
-.gridTitle{ margin: 0; font-size: 24px; font-weight: 750; }
-.legend{ color: var(--muted); font-size: 13px; }
+.gridTitle{ margin: 0; font-size: 26px; font-weight: 750; }
+.gridTitle small{ margin-left: 6px; color: var(--muted); font-size: 14px; font-weight: 600; }
+.legend{ color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.kindDot{ display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: 8px; }
+.kindDot.loop{ background: var(--accent); }
+.kindDot.fx{ background: var(--shot); }
 
 .grid{
   display: grid;
@@ -165,8 +182,18 @@ button{ touch-action: manipulation; }
   transition: transform .08s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 .tile:active{ transform: scale(.97); }
-.tileTop{ display: flex; align-items: center; gap: 8px; min-height: 46px; padding-right: 50px; }  /* reserva a altura do 1× */
-.tileTheme{ color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tileTop{ display: flex; align-items: center; gap: 8px; min-height: 46px; padding-right: 50px; }  /* reserva a altura do botão do canto */
+.kind{
+  font-size: 11px; font-weight: 750; letter-spacing: .4px; text-transform: uppercase;
+  color: var(--muted);
+}
+.tile.loop{ box-shadow: inset 3px 0 0 rgba(242,181,68,.55); }
+.tile.fx{ box-shadow: inset 3px 0 0 rgba(79,209,197,.55); }
+.tile.fx .kind{ color: var(--shot); }
+.tile.loop .kind{ color: var(--accent); }
+.tileMeta{ display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; min-height: 16px; }
+.tileTheme{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tileDur{ margin-left: auto; flex: none; font-variant-numeric: tabular-nums; }
 .tileName{
   font-weight: 650;
   font-size: 17px;
@@ -177,7 +204,7 @@ button{ touch-action: manipulation; }
   overflow: hidden;
   word-break: break-word;
 }
-.once{
+.alt{
   position: absolute;
   right: 8px; top: 8px;
   width: 46px; height: 46px;
@@ -188,9 +215,10 @@ button{ touch-action: manipulation; }
   font-size: 15px;
   cursor: pointer;
 }
-.once:active{ background: rgba(79,209,197,.25); }
+.alt:active{ background: rgba(255,255,255,.18); }
 
 /* tocando em loop */
+.tile.on .eq{ display: inline-flex; }
 .tile.on{
   border-color: rgba(242,181,68,.7);
   background: linear-gradient(180deg, rgba(242,181,68,.22), rgba(242,181,68,.08));
@@ -198,14 +226,13 @@ button{ touch-action: manipulation; }
 }
 /* tocando uma vez */
 .tile.shot{ border-color: rgba(79,209,197,.7); }
-.tile.shot .once{ background: rgba(79,209,197,.25); border-color: rgba(79,209,197,.6); }
+.tile.shot{ background: linear-gradient(180deg, rgba(79,209,197,.18), rgba(79,209,197,.06)); }
 
 .tile.pending{ opacity: .5; pointer-events: none; }
 .tile.pending .tileName::after{ content: " · publicando…"; color: var(--muted); font-weight: 500; }
 
 /* barrinhas de equalizador */
 .eq{ display: none; align-items: flex-end; gap: 2px; height: 14px; }
-.tile.on .eq{ display: inline-flex; }
 .eq i{
   display: block; width: 3px; height: 100%; border-radius: 2px;
   background: var(--accent);
@@ -271,6 +298,7 @@ button{ touch-action: manipulation; }
 .dockCard.loop{ border-color: rgba(242,181,68,.45); }
 .dockCard.shot{ border-color: rgba(79,209,197,.45); }
 .dcTop{ display: flex; align-items: center; gap: 6px; }
+.dcIcon{ font-size: 16px; flex: none; }
 .dcName{ flex: 1; min-width: 0; font-weight: 650; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dcStop{
   width: 36px; height: 36px; flex: none;
@@ -394,6 +422,11 @@ button{ touch-action: manipulation; }
 .sceneApply span{ color: var(--muted); font-size: 13px; flex: none; }
 .sceneDel{ width: 56px; min-height: 56px; flex: none; }
 
+.creditsList{ display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.credit{ padding: 10px 12px; border-radius: 12px; background: var(--surface); line-height: 1.45; }
+.credit a, .sheet p a{ color: var(--accent); }
+.newTheme{ padding: 4px 14px; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid var(--line); }
+
 .steps{ padding-left: 22px; line-height: 1.7; margin: 8px 0; }
 .steps a{ color: var(--accent); }
 
@@ -438,7 +471,7 @@ button{ touch-action: manipulation; }
 
 /* ---------- retrato / telas estreitas: temas viram uma faixa no topo ---------- */
 @media (max-width: 900px){
-  .content{ grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .content{ grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
   .themeList{
     flex-direction: row;
     overflow-x: auto; overflow-y: hidden;
@@ -459,6 +492,8 @@ button{ touch-action: manipulation; }
   .themeBtn.active{ box-shadow: inset 0 0 0 2px var(--accent); }
   .themeIcon{ width: auto; font-size: 18px; }
   .themeCount{ display: none; }
+  .groupHead{ flex: none; align-self: center; margin: 0 2px 0 10px; font-size: 11px; }
+  .groupHead:first-child{ margin-left: 0; }
   .main{ padding-left: calc(16px + var(--safe-l)); }
 }
 
