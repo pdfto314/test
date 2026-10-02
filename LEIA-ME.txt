@@ -6,6 +6,11 @@ Solução (esta versão):
 - Botão "Recarregar" tenta GitHub API só quando você quiser (PC), e salva cache.
 
 Como atualizar quando adicionar/remover/renomear áudios:
+- Automático: ao dar push na main com mudanças em audio/, o GitHub Action
+  (.github/workflows/playlist.yml) regenera e commita o playlist.json sozinho.
+  Depois disso, rode "git pull" antes do próximo commit.
+
+Manual (se preferir, ou para testar localmente):
 1) No Windows, rode: generate_playlist.bat
    (ou, com Python instalado, em qualquer sistema: python gerar_playlist.py)
 2) Isso gera/atualiza playlist.json
