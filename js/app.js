@@ -150,13 +150,11 @@ function tileEl(it, { showTheme = false } = {}){
   tile.tabIndex = 0;
   tile.setAttribute("aria-label", `${displayTitle(it.title)} (${fx ? "efeito" : "ambiente"})`);
   tile.innerHTML = `
-    <div class="tileHead">
-      <span class="kind">${fx ? "⚡ Efeito" : "∞ Ambiente"}</span>
-      <span class="flags"><span class="spotFlag" title="Aleatório">🎲</span><span class="favFlag" title="Favorito">★</span></span>
-    </div>
     <div class="tileName">${escapeHtml(displayTitle(it.title))}</div>
-    ${showTheme && theme ? `<div class="tileTheme">${ts.icon} ${escapeHtml(themeLabel(theme.name))}</div>` : ""}
+    ${showTheme && theme ? `<div class="tileSub"><span>${ts.icon} ${escapeHtml(themeLabel(theme.name))}</span></div>` : ""}
     <div class="tileFoot">
+      <span class="kindIcon" title="${fx ? "Efeito: toque toca uma vez" : "Ambiente: toque liga o loop"}">${fx ? "⚡" : "∞"}</span>
+      <span class="flags"><span class="spotFlag" title="Aleatório">🎲</span><span class="favFlag" title="Favorito">★</span></span>
       <div class="wave" aria-hidden="true">${waveBars(it.url)}</div>
       <span class="dur">${formatDuration(it.duration)}</span>
     </div>
@@ -195,11 +193,22 @@ engine.onProgress((url, p) => {
 });
 
 /* ======================= telas ======================= */
-function section(title, extra = ""){
+function section(title, { hint = "", extra = "" } = {}){
   const s = document.createElement("section");
   s.className = "section";
-  s.innerHTML = `<div class="sectionHead"><h2>${title}</h2>${extra}</div>`;
+  s.innerHTML = `<div class="sectionHead"><h2>${title}</h2>${hint ? `<span class="sectionHint">${hint}</span>` : ""}${extra}</div>`;
   return s;
+}
+/* esqueleto mostrado enquanto a biblioteca carrega */
+function skeleton(){
+  const d = document.createElement("div");
+  d.className = "skeleton";
+  d.innerHTML = `<div class="skLine w40"></div><div class="skLine w25"></div><div class="skGrid">${'<div class="skCard"></div>'.repeat(8)}</div>`;
+  return d;
+}
+function greeting(){
+  const h = new Date().getHours();
+  return h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
 function emptyState(icon, text){
   const d = document.createElement("div");
@@ -248,7 +257,7 @@ function renderHome(frag){
   hero.className = "hero";
   hero.innerHTML = `
     <div class="heroText">
-      <h1>Boa sessão, mestre.</h1>
+      <h1>${greeting()}, mestre.</h1>
       <p>${plural(totalSounds(), "som", "sons")} · ${plural(lib.themes.length, "tema", "temas")} · ${plural(scenes.length, "cena", "cenas")}</p>
     </div>
     <div class="heroTips">
@@ -258,7 +267,7 @@ function renderHome(frag){
     </div>`;
   frag.appendChild(hero);
 
-  const sc = section("🎬 Cenas", `<button class="linkBtn" type="button" data-scenes>Gerenciar</button>`);
+  const sc = section("🎬 Cenas", { hint: "toque para trocar com transição suave", extra: `<button class="linkBtn" type="button" data-scenes>Gerenciar</button>` });
   sc.querySelector("[data-scenes]").addEventListener("click", () => scenesUi.open());
   const row = document.createElement("div");
   row.className = "sceneRow";
@@ -274,7 +283,7 @@ function renderHome(frag){
 
   const favItems = favs.filter(hasSound).map(itemOf);
   if (favItems.length){
-    const fs = section("⭐ Favoritos", `<button class="linkBtn" type="button" data-go="favs">Ver todos</button>`);
+    const fs = section("⭐ Favoritos", { extra: `<button class="linkBtn" type="button" data-go="favs">Ver todos</button>` });
     fs.querySelector("[data-go]").addEventListener("click", () => go(VIEW_FAVS));
     fs.appendChild(tileGrid(favItems.slice(0, 8), { showTheme: true }));
     frag.appendChild(fs);
@@ -283,7 +292,7 @@ function renderHome(frag){
   const live = playingThemeKeys();
   for (const group of sortedGroups()){
     const gs = groupStyle(group);
-    const s = section(`${gs.icon} ${escapeHtml(groupLabel(group))}`, gs.hint ? `<span class="muted small">${gs.hint}</span>` : "");
+    const s = section(`${gs.icon} ${escapeHtml(groupLabel(group))}`, { hint: gs.hint });
     s.style.setProperty("--h", gs.hue);
     const grid = document.createElement("div");
     grid.className = "themeGrid";
@@ -321,9 +330,12 @@ function renderTheme(frag){
   head.innerHTML = `
     <span class="thIcon" aria-hidden="true">${ts.icon}</span>
     <div class="thText">
-      <div class="thGroup">${groupStyle(t.group).icon} ${escapeHtml(groupLabel(t.group))}</div>
       <h1>${escapeHtml(themeLabel(t.name))}</h1>
-      <div class="thMeta">${plural(t.items.length, "som", "sons")}</div>
+      <div class="thMeta">
+        <span class="thGroup">${groupStyle(t.group).icon} ${escapeHtml(groupLabel(t.group))}</span>
+        <span>${plural(t.items.length, "som", "sons")}${fxItems.length ? ` · ${plural(fxItems.length, "efeito", "efeitos")}` : ""}</span>
+        <span class="thLive" hidden><b></b></span>
+      </div>
     </div>
     <div class="thActions">
       ${fxItems.length > 1 ? `<button class="btn" type="button" data-random>🎲 Surpresa</button>` : ""}
@@ -341,12 +353,12 @@ function renderTheme(frag){
   frag.appendChild(head);
 
   if (fxItems.length){
-    const s = section(`⚡ Efeitos <small>toque toca 1×</small>`);
+    const s = section("⚡ Efeitos", { hint: "toque toca uma vez · ∞ no canto põe em loop" });
     s.appendChild(tileGrid(fxItems));
     frag.appendChild(s);
   }
   if (loopItems.length){
-    const s = section(`∞ Ambientes e trilhas <small>toque liga/desliga</small>`);
+    const s = section(loopItems.length === t.items.length ? "∞ Sons" : "∞ Ambientes e trilhas", { hint: "toque liga ou desliga o loop · 1× toca uma vez" });
     s.appendChild(tileGrid(loopItems));
     frag.appendChild(s);
   }
@@ -533,10 +545,17 @@ function renderDock(){
     frag.appendChild(e);
   }
   els.dockList.replaceChildren(frag);
+  syncDockOverflow();
   for (const [url, p] of engine.shots){
     if (p.fromSpot) for (const card of els.dockList.querySelectorAll(`.dockCard.spot[data-url="${CSS.escape(url)}"]`)) card.classList.add("ringing");
   }
 }
+
+/* sombra na borda direita quando há mais sons do que cabem na barra */
+function syncDockOverflow(){
+  els.dockList.classList.toggle("overflow", els.dockList.scrollWidth > els.dockList.clientWidth + 4);
+}
+window.addEventListener("resize", syncDockOverflow);
 
 /* ======================= visualizador ======================= */
 const viz = { raf: 0, ctx: els.viz.getContext("2d"), w: 0, h: 0 };
@@ -617,6 +636,13 @@ engine.onChange(() => {
   syncScenes();
   const live = playingThemeKeys();
   for (const card of els.main.querySelectorAll(".themeCard[data-key]")) card.classList.toggle("live", live.has(card.dataset.key));
+  const liveEl = els.main.querySelector(".thLive");
+  if (liveEl){
+    const t = lib.themes.find(x => x.key === view);
+    const n = t ? t.items.filter(it => engine.isPlaying(it.url)).length : 0;
+    liveEl.hidden = !n;
+    liveEl.firstElementChild.textContent = `● ${n} tocando`;
+  }
   if (els.soundDlg.open) syncSoundSheet();
   kickViz();
   saveSession();
@@ -821,6 +847,7 @@ async function init(){
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncWakeLock(); });
 
   renderDock();
+  els.main.replaceChildren(skeleton());
 
   await migrateSavedPaths();
   const last = readJson(LS.last, null);
