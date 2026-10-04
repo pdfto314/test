@@ -14,6 +14,7 @@ import { SPOT_FREQS } from "./engine.js";
 import { allScenes, loadShared, setSharedData, fixLocalUrls, initScenes, applyScene, isActive, sceneHue, sceneSummary, onScenesChange } from "./scenes.js";
 import { renderConnect, initAuthUi } from "./github.js";
 import { initManage } from "./manage.js";
+import { initBackdrop } from "./backdrop.js";
 
 const VIEW_HOME = "home", VIEW_FAVS = "favs", VIEW_RECENT = "recent";
 const FREQ_ORDER = ["often", "sometimes", "rare"];
@@ -25,8 +26,10 @@ const els = {
   ambVol: $("ambVol"), fxVol: $("fxVol"), stopAllBtn: $("stopAllBtn"),
   startScreen: $("startScreen"), startSub: $("startSub"), startBtn: $("startBtn"), resumeBtn: $("resumeBtn"),
   soundDlg: $("soundDlg"), settingsDlg: $("settingsDlg"), creditsDlg: $("creditsDlg"), creditsList: $("creditsList"),
-  oneMusic: $("oneMusic"), libStats: $("libStats"), refreshBtn: $("refreshBtn"), creditsBtn: $("creditsBtn"),
+  oneMusic: $("oneMusic"), backdropOn: $("backdropOn"), libStats: $("libStats"), refreshBtn: $("refreshBtn"), creditsBtn: $("creditsBtn"),
+  dockScene: $("dockScene"),
 };
+let backdrop = null;
 
 let view = VIEW_HOME;
 let query = "";
@@ -501,6 +504,7 @@ function dockCard(url, kind){
   div.innerHTML = `
     <div class="dcTop">
       <span class="dcIcon" aria-hidden="true">${kind === "spot" ? "🎲" : ts.icon}</span>
+      ${kind === "loop" ? `<span class="dcEq" aria-hidden="true"><i></i><i></i><i></i></span>` : ""}
       <button class="dcName" type="button">${escapeHtml(titleOf(url))}</button>
       <button class="dcStop" type="button" aria-label="Parar">✕</button>
     </div>
@@ -546,6 +550,9 @@ function renderDock(){
   }
   els.dockList.replaceChildren(frag);
   syncDockOverflow();
+  const active = allScenes().find(s => isActive(s));
+  els.dockScene.hidden = !active;
+  if (active) els.dockScene.textContent = `${active.icon} ${active.name}`;
   for (const [url, p] of engine.shots){
     if (p.fromSpot) for (const card of els.dockList.querySelectorAll(`.dockCard.spot[data-url="${CSS.escape(url)}"]`)) card.classList.add("ringing");
   }
@@ -645,10 +652,20 @@ engine.onChange(() => {
   }
   if (els.soundDlg.open) syncSoundSheet();
   kickViz();
+  syncBackdrop();
   saveSession();
   syncWakeLock();
   syncMediaSession();
 });
+function syncBackdrop(){
+  if (!backdrop) return;
+  const list = [];
+  for (const url of [...engine.loops.keys(), ...engine.spots.keys()]){
+    const t = themeOf(url);
+    if (t) list.push(themeStyle(t.name));
+  }
+  backdrop.setActive(list);
+}
 onScenesChange(() => { if (view === VIEW_HOME && !query) renderMain(); });
 
 /* ======================= biblioteca: carregar / mudanças pelo app ======================= */
@@ -761,10 +778,16 @@ async function migrateSavedPaths(){
 /* ======================= ajustes e créditos ======================= */
 function openSettings(){
   els.oneMusic.checked = readJson(LS.prefs, {}).oneMusic !== false;
+  els.backdropOn.checked = backdrop?.isEnabled() ?? false;
   els.settingsDlg.showModal();
 }
 els.oneMusic.addEventListener("change", () => {
   writeJson(LS.prefs, { ...readJson(LS.prefs, {}), oneMusic: els.oneMusic.checked });
+});
+els.backdropOn.addEventListener("change", () => {
+  writeJson(LS.prefs, { ...readJson(LS.prefs, {}), backdrop: els.backdropOn.checked });
+  backdrop?.setEnabled(els.backdropOn.checked);
+  syncBackdrop();
 });
 els.refreshBtn.addEventListener("click", async () => {
   const ok = await loadLibrary();
@@ -808,6 +831,9 @@ async function init(){
   });
 
   for (const id of ["settingsDlg", "creditsDlg"]) wireDialog($(id));
+  backdrop = initBackdrop({ canvas: $("backdrop"), readLevels: engine.readLevels });
+  const prefBackdrop = readJson(LS.prefs, {}).backdrop;
+  backdrop.setEnabled(typeof prefBackdrop === "boolean" ? prefBackdrop : backdrop.defaultEnabled);
   initAuthUi();
   renderConnect($("settingsConnect"));
   document.addEventListener("jogatina:open-settings", openSettings);

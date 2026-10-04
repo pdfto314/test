@@ -24,6 +24,7 @@ Pronto. A partir daí o site é publicado pelo workflow **Publicar site** (`.git
 
 - **🎲 Aleatório**: o som toca sozinho de tempos em tempos (frequente / às vezes / raro).
 - **🎬 Cenas** guardam ambientes + aleatórios + volumes; as **compartilhadas** (em `cenas.json`) aparecem em todos os aparelhos.
+- **Fundo animado**: o fundo vira um "vídeo" do que está tocando — chuva com relâmpagos, vagalumes, ondas, pingos, brasas, névoa, faíscas — pulsando com o áudio (desligável em ⚙️ Ajustes; respeita "reduzir movimento").
 - **Uma trilha por vez**, **🎲 Surpresa** por tema, **⭐ Favoritos**, **🕘 Recentes**, **🔎 busca**, visualizador e tela sempre acesa.
 
 ## Colocar sons no site — 3 jeitos, nenhum precisa de `git pull`
@@ -83,6 +84,7 @@ Os testes usam um GitHub e um Freesound **simulados com estado real** (blobs, á
 | `index.html`, `style.css` | página e visual |
 | `js/app.js` | telas, navegação, painel do som, barra “Tocando” |
 | `js/engine.js` | motor de áudio (Web Audio: volumes, fades, aleatórios, visualizador) |
+| `js/backdrop.js` | fundo animado por tema (canvas, reage ao áudio) |
 | `js/library.js` | biblioteca, favoritos, recentes, créditos |
 | `js/scenes.js` | cenas (do aparelho e compartilhadas) |
 | `js/manage.js` | enviar arquivos/pastas, renomear, mover, remover |

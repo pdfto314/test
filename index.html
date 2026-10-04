@@ -23,6 +23,7 @@
   <link rel="modulepreload" href="js/app.js" />
 </head>
 <body>
+  <canvas id="backdrop" class="backdrop" aria-hidden="true"></canvas>
   <div class="app">
     <header class="topbar">
       <button id="homeBtn" class="brand" type="button" aria-label="Início">
@@ -53,6 +54,7 @@
           <span class="dockLabel">Tocando</span>
           <span id="playingCount" class="badge">0</span>
           <canvas id="viz" class="viz" aria-hidden="true"></canvas>
+          <span id="dockScene" class="dockScene" hidden></span>
         </div>
         <div id="dockList" class="dockList"></div>
       </div>
@@ -189,6 +191,10 @@
       <label class="switchRow">
         <span><b>Uma trilha por vez</b><br /><span class="muted small">Ao tocar uma música de “Trilhas”, a anterior sai com fade.</span></span>
         <input id="oneMusic" type="checkbox" class="switch" />
+      </label>
+      <label class="switchRow">
+        <span><b>Fundo animado</b><br /><span class="muted small">Chuva, vagalumes, ondas, brasas… o fundo acompanha o que está tocando.</span></span>
+        <input id="backdropOn" type="checkbox" class="switch" />
       </label>
     </section>
 
