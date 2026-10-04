@@ -77,21 +77,22 @@ export function groupStyle(group){
 }
 export const groupLabel = (group) => group || "Outros";
 
+/* [regex, ícone, matiz, efeito do fundo animado (js/backdrop.js)] */
 const THEME_STYLES = [
-  [/aranha|spider/, "🕷️", 285], [/borderlands|cidade/, "🏰", 42], [/combate|espada/, "⚔️", 355],
-  [/batalha|battle/, "🥁", 8], [/cavalo|horse/, "🐎", 28], [/chuva|tempestade|rain/, "🌧️", 212],
-  [/coruja|owl/, "🦉", 38], [/cult|seita/, "🕯️", 330], [/drag/, "🐉", 12],
-  [/caverna|masmorra|dungeon/, "🗝️", 32], [/floresta|campo|forest/, "🌲", 128], [/goblin|orc/, "👺", 95],
-  [/lobo|wolf/, "🐺", 222], [/warg/, "🐕", 200], [/mar\b|porto|ocean|navio/, "🌊", 190],
-  [/minotauro/, "🐂", 16], [/morto|zumbi|zombie|undead|esqueleto/, "🧟", 150], [/rato|rat/, "🐀", 30],
-  [/ritua|magia|magic|infern/, "🔮", 292], [/tensao|misterio|suspense|horror|medo/, "🌫️", 248],
-  [/taverna|tavern/, "🍺", 36], [/fogo|fire|fogueira/, "🔥", 18], [/vento|wind/, "💨", 195],
-  [/musica|music|trilha/, "🎶", 265],
+  [/aranha|spider/, "🕷️", 285, "motes"], [/borderlands|cidade/, "🏰", 42, "rays"], [/combate|espada/, "⚔️", 355, "sparks"],
+  [/batalha|battle/, "🥁", 8, "sparks"], [/cavalo|horse/, "🐎", 28, "motes"], [/chuva|tempestade|rain/, "🌧️", 212, "rain"],
+  [/coruja|owl/, "🦉", 38, "fireflies"], [/cult|seita/, "🕯️", 330, "embers"], [/drag/, "🐉", 12, "embers"],
+  [/caverna|masmorra|dungeon/, "🗝️", 32, "drips"], [/floresta|campo|forest/, "🌲", 128, "fireflies"], [/goblin|orc/, "👺", 95, "motes"],
+  [/lobo|wolf/, "🐺", 222, "fog"], [/warg/, "🐕", 200, "fog"], [/mar\b|porto|ocean|navio/, "🌊", 190, "waves"],
+  [/minotauro/, "🐂", 16, "drips"], [/morto|zumbi|zombie|undead|esqueleto/, "🧟", 150, "fog"], [/rato|rat/, "🐀", 30, "drips"],
+  [/ritua|magia|magic|infern/, "🔮", 292, "embers"], [/tensao|misterio|suspense|horror|medo/, "🌫️", 248, "fog"],
+  [/taverna|tavern/, "🍺", 36, "embers"], [/fogo|fire|fogueira/, "🔥", 18, "embers"], [/vento|wind/, "💨", 195, "motes"],
+  [/musica|music|trilha/, "🎶", 265, "rays"],
 ];
 export function themeStyle(name){
   const n = norm(name);
   const hit = THEME_STYLES.find(([re]) => re.test(n));
-  return hit ? { icon: hit[1], hue: hit[2] } : { icon: "🎵", hue: hashString(name) % 360 };
+  return hit ? { icon: hit[1], hue: hit[2], motif: hit[3] } : { icon: "🎵", hue: hashString(name) % 360, motif: "motes" };
 }
 export const themeLabel = (name) => String(name).replaceAll("_", " ");
 
